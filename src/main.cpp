@@ -1,10 +1,8 @@
 
-// #include <ANTLRInputStream.h>
-#include <fstream>
-#include <iostream>
+#include "OrcaContext.h"
 
-// #include "OrcaLexer.h"
-// #include "OrcaParser.h"
+using namespace antlr4;
+using namespace orcagrammar;
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {
@@ -12,10 +10,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  // std::ifstream stream;
-  // stream.open(argv[1]);
-
-  // antlr4::ANTLRInputStream input(stream);
-
-  return 0;
+  std::string entryFilepath = argv[1];
+  OrcaContext context(entryFilepath);
+  context.lex();
 }

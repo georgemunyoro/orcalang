@@ -4,6 +4,9 @@ Constant: Integer | Float;
 Identifier: [a-zA-Z_][a-zA-Z0-9_]*;
 Integer: DIGIT_NON_ZERO DIGIT*;
 Float: DIGIT+ '.' DIGIT+;
+String: '"' .*? '"';
+Boolean: 'true' | 'false';
+Char: '\'' . '\'';
 
 WS: [ \t\r\n]+ -> skip;
 

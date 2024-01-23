@@ -6,6 +6,6 @@ options {
 
 // Actual grammar start.
 
-program: expression;
+program: expression EOF;
 
 expression: Constant | Identifier;

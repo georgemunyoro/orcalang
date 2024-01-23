@@ -33,6 +33,18 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # compiler must be 17
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# add googletest
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/f8d7d77c06936315286eb55f8de22cd23c188571.zip
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -73,7 +85,23 @@ include_directories(${ANTLR_OrcaLexer_OUTPUT_DIR})
 include_directories(${ANTLR_OrcaParser_OUTPUT_DIR})
 
 # add generated grammar to demo binary target
-add_executable(orca src/main.cpp
+add_executable(orca 
+              src/main.cpp
+              src/OrcaLexerErrorListener.cpp
+              src/OrcaContext.cpp
+              ${ANTLR_OrcaLexer_CXX_OUTPUTS}
+              ${ANTLR_OrcaParser_CXX_OUTPUTS}
+)
+target_link_libraries(orca antlr4_static)
+
+enable_testing()
+
+add_executable(orca_test test/orca_test.cpp
                ${ANTLR_OrcaLexer_CXX_OUTPUTS}
                ${ANTLR_OrcaParser_CXX_OUTPUTS})
-target_link_libraries(orca antlr4_static)
+
+target_link_libraries(orca_test GTest::gtest_main)
+target_link_libraries(orca_test antlr4_static)
+
+include(GoogleTest)
+gtest_discover_tests(orca_test)
