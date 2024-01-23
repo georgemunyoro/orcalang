@@ -1,10 +1,10 @@
 
-#include <ANTLRInputStream.h>
+// #include <ANTLRInputStream.h>
 #include <fstream>
 #include <iostream>
 
-#include "OrcaLexer.h"
-#include "OrcaParser.h"
+// #include "OrcaLexer.h"
+// #include "OrcaParser.h"
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {
@@ -12,10 +12,10 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  std::ifstream stream;
-  stream.open(argv[1]);
+  // std::ifstream stream;
+  // stream.open(argv[1]);
 
-  antlr4::ANTLRInputStream input(stream);
+  // antlr4::ANTLRInputStream input(stream);
 
   return 0;
 }

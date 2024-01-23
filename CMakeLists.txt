@@ -61,9 +61,9 @@ set(ANTLR_EXECUTABLE ${PROJECT_SOURCE_DIR}/vendor/antlr/antlr-4.13.0-complete.ja
 find_package(ANTLR REQUIRED)
 
 # Call macro to add lexer and grammar to your build dependencies.
-antlr_target(OrcaLexer src/OrcaLexer.g4 LEXER
+antlr_target(OrcaLexer OrcaLexer.g4 LEXER
              PACKAGE orcagrammar)
-antlr_target(OrcaParser src/OrcaParser.g4 PARSER
+antlr_target(OrcaParser OrcaParser.g4 PARSER
              PACKAGE orcagrammar
              DEPENDS_ANTLR OrcaLexer
              COMPILE_FLAGS -lib ${ANTLR_OrcaLexer_OUTPUT_DIR})
