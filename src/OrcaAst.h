@@ -1,6 +1,7 @@
 #pragma once
 
 #include <any>
+#include <map>
 #include <string>
 
 #include "OrcaParser.h"
@@ -227,4 +228,78 @@ private:
   std::vector<std::string> params;
   std::string name;
   OrcaAstTypeNode *type;
+};
+
+class OrcaAstCompoundStatementNode : public OrcaAstStatementNode {
+public:
+  OrcaAstCompoundStatementNode(std::vector<OrcaAstNode *> nodes)
+      : nodes(nodes) {}
+
+  std::any accept(OrcaAstVisitor &visitor) override;
+
+  void addNode(OrcaAstNode *node) { nodes.push_back(node); }
+
+  void print(int indent) override {
+    printf("%*sCompoundStatementNode\n", indent, "");
+    for (auto &node : nodes) {
+      node->print(indent + 2);
+    }
+  }
+
+private:
+  std::vector<OrcaAstNode *> nodes;
+};
+
+class OrcaAstFunctionDeclarationNode : public OrcaAstStatementNode {
+public:
+  OrcaAstFunctionDeclarationNode(const std::string &name,
+                                 OrcaAstTypeNode *returnType,
+                                 std::map<std::string, OrcaAstTypeNode *> args,
+                                 OrcaAstCompoundStatementNode *body)
+      : name(name), returnType(returnType), args(args), body(body) {}
+
+  std::any accept(OrcaAstVisitor &visitor) override;
+
+  void print(int indent) override {
+    printf("%*sFunctionDeclarationNode\n", indent, "");
+    printf("%*sname: %s\n", indent + 2, "", name.c_str());
+    printf("%*sreturnType:\n", indent + 2, "");
+    returnType->print(indent + 4);
+    printf("%*sargs:\n", indent + 2, "");
+    for (auto &arg : args) {
+      printf("%*s%s:\n", indent + 4, "", arg.first.c_str());
+      arg.second->print(indent + 6);
+    }
+    printf("%*sbody:\n", indent + 2, "");
+    body->print(indent + 4);
+  }
+
+private:
+  std::string name;
+  OrcaAstTypeNode *returnType;
+  std::map<std::string, OrcaAstTypeNode *> args;
+  OrcaAstCompoundStatementNode *body;
+};
+
+class OrcaAstJumpStatementNode : public OrcaAstStatementNode {
+public:
+  OrcaAstJumpStatementNode(const std::string &keyword,
+                           OrcaAstExpressionNode *expr)
+      : keyword(keyword), expr(expr) {}
+
+  OrcaAstJumpStatementNode(const std::string &keyword)
+      : keyword(keyword), expr(nullptr) {}
+
+  std::any accept(OrcaAstVisitor &visitor) override;
+
+  void print(int indent) override {
+    printf("%*sJumpStatementNode\n", indent, "");
+    printf("%*skeyword: %s\n", indent + 2, "", keyword.c_str());
+    printf("%*sexpr:\n", indent + 2, "");
+    expr->print(indent + 4);
+  }
+
+private:
+  std::string keyword;
+  OrcaAstExpressionNode *expr;
 };

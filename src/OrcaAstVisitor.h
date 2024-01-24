@@ -15,4 +15,9 @@ public:
   virtual std::any
   visitTemplateTypeDeclaration(OrcaAstTemplateTypeDeclarationNode *node) = 0;
   virtual std::any visitType(OrcaAstTypeNode *node) = 0;
+  virtual std::any
+  visitCompoundStatement(OrcaAstCompoundStatementNode *node) = 0;
+  virtual std::any
+  visitFunctionDeclarationStatement(OrcaAstFunctionDeclarationNode *node) = 0;
+  virtual std::any visitJumpStatement(OrcaAstJumpStatementNode *node) = 0;
 };

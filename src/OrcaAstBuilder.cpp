@@ -115,9 +115,27 @@ std::any OrcaAstBuilder::visitUnaryExpression(
 std::any OrcaAstBuilder::visitConditionalExpression(
     OrcaParser::ConditionalExpressionContext *context) {
 
-  printf("VISITING CONDITIONAL\n");
+  // Ternary conditional expression
+  if (context->trueExpr) {
+    auto condition = visit(context->condition);
+    auto trueExpr = visit(context->trueExpr);
+    auto elseExpr = visit(context->elseExpr);
 
-  return std::any();
+    assert(condition.has_value());
+    assert(trueExpr.has_value());
+    assert(elseExpr.has_value());
+
+    OrcaAstConditionalExpressionNode *conditionalNode =
+        new OrcaAstConditionalExpressionNode(
+            std::any_cast<OrcaAstExpressionNode *>(condition),
+            std::any_cast<OrcaAstExpressionNode *>(trueExpr),
+            std::any_cast<OrcaAstExpressionNode *>(elseExpr));
+
+    return std::any(conditionalNode);
+  }
+
+  // Fall through to logical or expression
+  return visit(context->logicalOrExpression());
 }
 
 std::any OrcaAstBuilder::visitSizeofExpression(
@@ -219,4 +237,37 @@ std::any OrcaAstBuilder::visitTypeDeclaration(
 
 std::any OrcaAstBuilder::visitType(OrcaParser::TypeContext *context) {
   return std::any(new OrcaAstTypeNode(context));
+}
+
+std::any OrcaAstBuilder::visitFunctionDeclarationStatement(
+    OrcaParser::FunctionDeclarationStatementContext *context) {}
+
+std::any OrcaAstBuilder::visitCompoundStatement(
+    OrcaParser::CompoundStatementContext *context) {}
+
+std::any
+OrcaAstBuilder::visitJumpStatement(OrcaParser::JumpStatementContext *context) {
+  if (context->BREAK()) {
+    return std::any(
+        new OrcaAstJumpStatementNode(OrcaAstJumpStatementNode("break")));
+  }
+
+  if (context->CONTINUE()) {
+    return std::any(
+        new OrcaAstJumpStatementNode(OrcaAstJumpStatementNode("continue")));
+  }
+
+  assert(context->RETURN());
+
+  if (context->expression()) {
+    auto expr = visit(context->expression());
+
+    assert(expr.has_value());
+
+    return std::any(new OrcaAstJumpStatementNode(OrcaAstJumpStatementNode(
+        "return", std::any_cast<OrcaAstExpressionNode *>(expr))));
+  }
+
+  return std::any(
+      new OrcaAstJumpStatementNode(OrcaAstJumpStatementNode("return")));
 }

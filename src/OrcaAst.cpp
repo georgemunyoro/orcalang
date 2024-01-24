@@ -37,3 +37,15 @@ std::any OrcaAstTemplateTypeDeclarationNode::accept(OrcaAstVisitor &visitor) {
 std::any OrcaAstTypeNode::accept(OrcaAstVisitor &visitor) {
   return visitor.visitType(this);
 }
+
+std::any OrcaAstJumpStatementNode::accept(OrcaAstVisitor &visitor) {
+  return visitor.visitJumpStatement(this);
+}
+
+std::any OrcaAstCompoundStatementNode::accept(OrcaAstVisitor &visitor) {
+  return visitor.visitCompoundStatement(this);
+}
+
+std::any OrcaAstFunctionDeclarationNode::accept(OrcaAstVisitor &visitor) {
+  return visitor.visitFunctionDeclarationStatement(this);
+}

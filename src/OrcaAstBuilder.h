@@ -182,10 +182,7 @@ public:
   };
 
   std::any visitFunctionDeclarationStatement(
-      OrcaParser::FunctionDeclarationStatementContext *context) override {
-    printf("visitFunctionDeclarationStatement\n");
-    throw "TODO";
-  };
+      OrcaParser::FunctionDeclarationStatementContext *context) override;
 
   std::any visitFunctionArg(OrcaParser::FunctionArgContext *context) override {
     printf("visitFunctionArg\n");
@@ -199,10 +196,7 @@ public:
   };
 
   std::any
-  visitJumpStatement(OrcaParser::JumpStatementContext *context) override {
-    printf("visitJumpStatement\n");
-    throw "TODO";
-  };
+  visitJumpStatement(OrcaParser::JumpStatementContext *context) override;
 
   std::any
   visitLabeledStatement(OrcaParser::LabeledStatementContext *context) override {
@@ -211,10 +205,7 @@ public:
   };
 
   std::any visitCompoundStatement(
-      OrcaParser::CompoundStatementContext *context) override {
-    printf("visitCompoundStatement\n");
-    throw "TODO";
-  };
+      OrcaParser::CompoundStatementContext *context) override;
 
   std::any visitSelectionStatement(
       OrcaParser::SelectionStatementContext *context) override {
