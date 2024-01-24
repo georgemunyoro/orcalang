@@ -155,7 +155,7 @@ std::any OrcaAstBuilder::visitLogicalOrExpression(
       if (lhs == nullptr) {
         lhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
         continue;
-      } 
+      }
 
       auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
       lhs = new OrcaAstBinaryExpressionNode(lhs, rhs, "||");
@@ -165,6 +165,31 @@ std::any OrcaAstBuilder::visitLogicalOrExpression(
   }
 
   // Fall through to logical and expression
+  return visit(context->lhs);
+}
+
+std::any OrcaAstBuilder::visitLogicalAndExpression(
+    OrcaParser::LogicalAndExpressionContext *context) {
+  // Logical and expression
+  if (context->rhs) {
+    OrcaAstExpressionNode *lhs = nullptr;
+
+    for (auto &expr : context->inclusiveOrExpression()) {
+      std::any logicalAnd = visit(expr);
+
+      if (lhs == nullptr) {
+        lhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
+        continue;
+      }
+
+      auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
+      lhs = new OrcaAstBinaryExpressionNode(lhs, rhs, "||");
+    }
+
+    return std::any(lhs);
+  }
+
+  // Fall through to inclusive or expression
   return visit(context->lhs);
 }
 

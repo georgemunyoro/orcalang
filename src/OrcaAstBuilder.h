@@ -60,10 +60,7 @@ public:
       OrcaParser::LogicalOrExpressionContext *context) override;
 
   std::any visitLogicalAndExpression(
-      OrcaParser::LogicalAndExpressionContext *context) override {
-    printf("visitLogicalAndExpression\n");
-    throw "TODO";
-  };
+      OrcaParser::LogicalAndExpressionContext *context) override;
 
   std::any visitInclusiveOrExpression(
       OrcaParser::InclusiveOrExpressionContext *context) override {
