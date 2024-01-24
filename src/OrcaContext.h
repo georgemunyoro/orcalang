@@ -7,6 +7,7 @@
 
 #include "OrcaLexer.h"
 #include "OrcaParser.h"
+#include "OrcaParserErrorListener.h"
 
 using namespace antlr4;
 using namespace orcagrammar;
@@ -45,7 +46,10 @@ private:
   std::ifstream fileStream;
   std::string source_code;
 
+  // Error handling
   OrcaLexerErrorListener *lexerErrorListener;
+  OrcaParserErrorListener *parserErrorListener;
+
   ANTLRInputStream *inputStream;
   CommonTokenStream *tokenStream;
   OrcaLexer *lexer;
@@ -54,4 +58,5 @@ private:
   OrcaParser::ProgramContext *programContext;
 
   friend class OrcaLexerErrorListener;
+  friend class OrcaParserErrorListener;
 };

@@ -88,6 +88,7 @@ include_directories(${ANTLR_OrcaParser_OUTPUT_DIR})
 add_executable(orca 
               src/main.cpp
               src/OrcaLexerErrorListener.cpp
+              src/OrcaParserErrorListener.cpp
               src/OrcaContext.cpp
               ${ANTLR_OrcaLexer_CXX_OUTPUTS}
               ${ANTLR_OrcaParser_CXX_OUTPUTS}

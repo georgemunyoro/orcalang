@@ -27,9 +27,10 @@ void OrcaContext::lex() { tokenStream->fill(); }
 
 void OrcaContext::parse() {
   parser = new OrcaParser(tokenStream);
+  parserErrorListener = new OrcaParserErrorListener(this);
+  parser->removeErrorListeners();
+  parser->addErrorListener(parserErrorListener);
   programContext = parser->program();
-  // print the parse tree (for debugging)
-  std::cout << programContext->toStringTree(parser) << std::endl;
 }
 
 void OrcaContext::readSourceCode() {
