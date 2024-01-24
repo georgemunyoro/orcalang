@@ -138,6 +138,36 @@ std::any OrcaAstBuilder::visitConditionalExpression(
   return visit(context->logicalOrExpression());
 }
 
+std::any OrcaAstBuilder::visitExpressionStatement(
+    OrcaParser::ExpressionStatementContext *context) {
+  return visit(context->expression());
+}
+
+std::any OrcaAstBuilder::visitLogicalOrExpression(
+    OrcaParser::LogicalOrExpressionContext *context) {
+  // Logical or expression
+  if (context->rhs) {
+    OrcaAstExpressionNode *lhs = nullptr;
+
+    for (auto &expr : context->logicalAndExpression()) {
+      std::any logicalAnd = visit(expr);
+
+      if (lhs == nullptr) {
+        lhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
+        continue;
+      } 
+
+      auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
+      lhs = new OrcaAstBinaryExpressionNode(lhs, rhs, "||");
+    }
+
+    return std::any(lhs);
+  }
+
+  // Fall through to logical and expression
+  return visit(context->lhs);
+}
+
 std::any OrcaAstBuilder::visitSizeofExpression(
     OrcaParser::SizeofExpressionContext *context) {
 
@@ -240,10 +270,18 @@ std::any OrcaAstBuilder::visitType(OrcaParser::TypeContext *context) {
 }
 
 std::any OrcaAstBuilder::visitFunctionDeclarationStatement(
-    OrcaParser::FunctionDeclarationStatementContext *context) {}
+    OrcaParser::FunctionDeclarationStatementContext *context) {
+  printf("TODO: FunctionDeclarationStatement\n");
+  exit(1);
+  return std::any();
+}
 
 std::any OrcaAstBuilder::visitCompoundStatement(
-    OrcaParser::CompoundStatementContext *context) {}
+    OrcaParser::CompoundStatementContext *context) {
+  printf("TODO: CompoundStatement\n");
+  exit(1);
+  return std::any();
+}
 
 std::any
 OrcaAstBuilder::visitJumpStatement(OrcaParser::JumpStatementContext *context) {

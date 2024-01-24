@@ -78,6 +78,8 @@ public:
   OrcaAstBinaryExpressionNode(OrcaAstExpressionNode *lhs,
                               OrcaAstExpressionNode *rhs, std::string op)
       : lhs(lhs), rhs(rhs) {}
+  
+  std::any accept(OrcaAstVisitor &visitor) override;
 
   void print(int indent) override {
     printf("%*sBinaryExpressionNode\n", indent, "");

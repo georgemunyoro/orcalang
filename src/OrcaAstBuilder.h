@@ -57,10 +57,7 @@ public:
       OrcaParser::ConditionalExpressionContext *context) override;
 
   std::any visitLogicalOrExpression(
-      OrcaParser::LogicalOrExpressionContext *context) override {
-    printf("visitLogicalOrExpression\n");
-    throw "TODO";
-  };
+      OrcaParser::LogicalOrExpressionContext *context) override;
 
   std::any visitLogicalAndExpression(
       OrcaParser::LogicalAndExpressionContext *context) override {
@@ -220,10 +217,7 @@ public:
   };
 
   std::any visitExpressionStatement(
-      OrcaParser::ExpressionStatementContext *context) override {
-    printf("visitExpressionStatement\n");
-    throw "TODO";
-  };
+      OrcaParser::ExpressionStatementContext *context) override;
 
 private:
   std::vector<OrcaAstNode *> nodes;

@@ -49,3 +49,7 @@ std::any OrcaAstCompoundStatementNode::accept(OrcaAstVisitor &visitor) {
 std::any OrcaAstFunctionDeclarationNode::accept(OrcaAstVisitor &visitor) {
   return visitor.visitFunctionDeclarationStatement(this);
 }
+
+std::any OrcaAstBinaryExpressionNode::accept(OrcaAstVisitor &visitor) {
+  return visitor.visitBinaryExpression(this);
+}

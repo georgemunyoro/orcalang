@@ -20,4 +20,5 @@ public:
   virtual std::any
   visitFunctionDeclarationStatement(OrcaAstFunctionDeclarationNode *node) = 0;
   virtual std::any visitJumpStatement(OrcaAstJumpStatementNode *node) = 0;
+  virtual std::any visitBinaryExpression(OrcaAstBinaryExpressionNode *node) = 0;
 };
