@@ -6,6 +6,7 @@
 #include <string_view>
 
 #include "OrcaLexer.h"
+#include "OrcaParser.h"
 
 using namespace antlr4;
 using namespace orcagrammar;
@@ -28,18 +29,15 @@ public:
   // syntax errors will be caught by the lexer error listener
   void lex();
 
-  // Returns a reference to the source code
-  std::string &getSourceCode() { return source_code; }
-
-  // Returns the line of source code at the given line number
-  // without making a copy, or an empty string if the line number
-  // is out of range
-  std::string_view getSourceLine(size_t line);
-
-  // Returns the filepath of the entry file
-  std::string &getEntryFilepath() { return entryFilepath; }
+  // Runs the parser, any syntax errors will be caught by the
+  // default error listener
+  void parse();
 
 private:
+  std::string &getSourceCode() { return source_code; }
+  std::string_view getSourceLine(size_t line);
+  std::string &getEntryFilepath() { return entryFilepath; }
+
   static std::ifstream openFile(const std::string &filepath);
   void readSourceCode();
 
@@ -51,4 +49,9 @@ private:
   ANTLRInputStream *inputStream;
   CommonTokenStream *tokenStream;
   OrcaLexer *lexer;
+  OrcaParser *parser;
+
+  OrcaParser::ProgramContext *programContext;
+
+  friend class OrcaLexerErrorListener;
 };

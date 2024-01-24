@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  std::string entryFilepath = argv[1];
-  OrcaContext context(entryFilepath);
+  OrcaContext context(argv[1]);
   context.lex();
+  context.parse();
 }

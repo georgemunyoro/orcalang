@@ -10,6 +10,7 @@ void OrcaLexerErrorListener::syntaxError(Recognizer *recognizer,
   auto sourceLine = context->getSourceLine(line).data();
 
   printf("error: encountered unrecognized token\n");
+  printf(" %s\n", msg.c_str());
   printf("--> %s [%zu:%zu]\n", context->getEntryFilepath().c_str(), line,
          charPositionInLine);
   printf("     | \n");

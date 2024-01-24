@@ -1,4 +1,5 @@
 #include "OrcaContext.h"
+#include "OrcaParser.h"
 #include <fstream>
 #include <string>
 #include <string_view>
@@ -23,6 +24,13 @@ OrcaContext::~OrcaContext() {
 }
 
 void OrcaContext::lex() { tokenStream->fill(); }
+
+void OrcaContext::parse() {
+  parser = new OrcaParser(tokenStream);
+  programContext = parser->program();
+  // print the parse tree (for debugging)
+  std::cout << programContext->toStringTree(parser) << std::endl;
+}
 
 void OrcaContext::readSourceCode() {
   std::string line;
