@@ -89,6 +89,7 @@ add_executable(orca
               src/main.cpp
               src/OrcaLexerErrorListener.cpp
               src/OrcaParserErrorListener.cpp
+              src/OrcaError.cpp
               src/OrcaContext.cpp
               ${ANTLR_OrcaLexer_CXX_OUTPUTS}
               ${ANTLR_OrcaParser_CXX_OUTPUTS}

@@ -19,7 +19,7 @@ public:
     readSourceCode();
     inputStream = new ANTLRInputStream(source_code);
     lexer = new OrcaLexer(inputStream);
-    lexerErrorListener = new OrcaLexerErrorListener(this);
+    lexerErrorListener = new OrcaLexerErrorListener(*this);
     lexer->removeErrorListeners();
     lexer->addErrorListener(lexerErrorListener);
     tokenStream = new CommonTokenStream(lexer);
@@ -35,9 +35,9 @@ public:
   void parse();
 
 private:
-  std::string &getSourceCode() { return source_code; }
-  std::string_view getSourceLine(size_t line);
-  std::string &getEntryFilepath() { return entryFilepath; }
+  const std::string &getSourceCode() const { return source_code; }
+  const std::string_view getSourceLine(size_t line) const;
+  const std::string &getEntryFilepath() const { return entryFilepath; }
 
   static std::ifstream openFile(const std::string &filepath);
   void readSourceCode();
@@ -59,4 +59,5 @@ private:
 
   friend class OrcaLexerErrorListener;
   friend class OrcaParserErrorListener;
+  friend class OrcaError;
 };

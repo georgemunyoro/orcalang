@@ -12,12 +12,12 @@ class OrcaContext;
 
 class OrcaParserErrorListener : public BaseErrorListener {
 public:
-  OrcaParserErrorListener(OrcaContext *context) : context(context) {}
+  OrcaParserErrorListener(const OrcaContext &context) : context(context) {}
 
   void syntaxError(Recognizer *recognizer, Token *offendingSymbol, size_t line,
                    size_t charPositionInLine, const std::string &msg,
                    std::exception_ptr e) override;
 
 private:
-  OrcaContext *context;
+  const OrcaContext &context;
 };

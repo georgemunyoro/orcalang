@@ -27,7 +27,7 @@ void OrcaContext::lex() { tokenStream->fill(); }
 
 void OrcaContext::parse() {
   parser = new OrcaParser(tokenStream);
-  parserErrorListener = new OrcaParserErrorListener(this);
+  parserErrorListener = new OrcaParserErrorListener(*this);
   parser->removeErrorListeners();
   parser->addErrorListener(parserErrorListener);
   programContext = parser->program();
@@ -40,7 +40,7 @@ void OrcaContext::readSourceCode() {
   }
 }
 
-std::string_view OrcaContext::getSourceLine(size_t line) {
+const std::string_view OrcaContext::getSourceLine(size_t line) const {
   size_t lineStart = 0;
   size_t currentLine = 1;
 
