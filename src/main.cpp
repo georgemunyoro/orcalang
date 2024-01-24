@@ -13,4 +13,5 @@ int main(int argc, char *argv[]) {
   OrcaContext context(argv[1]);
   context.lex();
   context.parse();
+  context.buildAst();
 }

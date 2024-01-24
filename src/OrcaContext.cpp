@@ -34,9 +34,10 @@ void OrcaContext::parse() {
   programContext = parser->program();
 }
 
-void OrcaContext::typeCheck() {
-  typeChecker = new TypeChecker();
-  typeChecker->visitProgram(programContext);
+void OrcaContext::buildAst() {
+  astBuilder = new OrcaAstBuilder(*this);
+  auto ast = astBuilder->build();
+  ast->print(0);
 }
 
 void OrcaContext::readSourceCode() {

@@ -5,10 +5,10 @@
 #include <fstream>
 #include <string_view>
 
+#include "OrcaAstBuilder.h"
 #include "OrcaLexer.h"
 #include "OrcaParser.h"
 #include "OrcaParserErrorListener.h"
-#include "TypeChecker.h"
 
 using namespace antlr4;
 using namespace orcagrammar;
@@ -25,6 +25,7 @@ public:
     lexer->addErrorListener(lexerErrorListener);
     tokenStream = new CommonTokenStream(lexer);
   };
+
   ~OrcaContext();
 
   // Runs the lexer, populating the token stream, any lexical
@@ -35,9 +36,9 @@ public:
   // default error listener
   void parse();
 
-  // Runs the type checker, any type errors will be caught by
-  // the type checker
-  void typeCheck();
+  // Builds the AST, any semantic errors will be caught by the
+  // AST builder
+  void buildAst();
 
 private:
   const std::string &getSourceCode() const { return source_code; }
@@ -59,11 +60,12 @@ private:
   CommonTokenStream *tokenStream;
   OrcaLexer *lexer;
   OrcaParser *parser;
-  TypeChecker *typeChecker;
+  OrcaAstBuilder *astBuilder;
 
   OrcaParser::ProgramContext *programContext;
 
   friend class OrcaLexerErrorListener;
   friend class OrcaParserErrorListener;
   friend class OrcaError;
+  friend class OrcaAstBuilder;
 };

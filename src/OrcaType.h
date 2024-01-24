@@ -1,3 +1,4 @@
+#pragma once
 
 #include <cstddef>
 #include <vector>
@@ -103,6 +104,7 @@ public:
 class OrcaType {
 public:
   OrcaType() {}
+  ~OrcaType() {}
 
   OrcaType(OrcaIntegerType integerType)
       : integerType(integerType), kind(OrcaTypeKind::Integer) {}
@@ -127,6 +129,24 @@ public:
 
   OrcaType(OrcaVoidType voidType)
       : voidType(voidType), kind(OrcaTypeKind::Void) {}
+
+  static OrcaType Void() { return OrcaType(OrcaVoidType()); }
+  static OrcaType Boolean() { return OrcaType(OrcaBooleanType()); }
+  static OrcaType Char() { return OrcaType(OrcaCharType()); }
+  static OrcaType Integer(bool isSigned, int bits) {
+    return OrcaType(OrcaIntegerType(isSigned, bits));
+  }
+  static OrcaType Float(int bits) { return OrcaType(OrcaFloatType(bits)); }
+  static OrcaType Pointer(OrcaType *pointee) {
+    return OrcaType(OrcaPointerType(pointee));
+  }
+  static OrcaType Array(OrcaType *elementType, size_t length) {
+    return OrcaType(OrcaArrayType(elementType, length));
+  }
+  static OrcaType
+  Struct(std::vector<std::pair<std::string, OrcaType *>> fields) {
+    return OrcaType(OrcaStructType(fields));
+  }
 
   OrcaTypeKind getKind() const { return kind; }
 

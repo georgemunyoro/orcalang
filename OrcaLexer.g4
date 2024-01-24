@@ -59,6 +59,8 @@ SHL: '<<';
 SHR: '>>';
 MOD: '%';
 DIV: '/';
+CALL: '()';
+DOLLAR: '$';
 
 // Types
 T_U8: 'u8';
@@ -87,5 +89,11 @@ BREAK: 'break';
 CONTINUE: 'continue';
 LET: 'let';
 AS: 'as';
+FN: 'func';
+TYPE: 'type';
+TRAIT: 'trait';
+IMPLEMENT: 'impl';
 
 Identifier: [a-zA-Z_][a-zA-Z0-9_]*;
+
+LineComment: '//' ~[\r\n]* -> channel(HIDDEN);

@@ -4,19 +4,72 @@ options {
 	tokenVocab = OrcaLexer;
 }
 
-program: expression EOF;
+program: statement* EOF;
+
+statement:
+	labeledStatement
+	| compoundStatement
+	| selectionStatement
+	| expressionStatement
+	| iterationStatement
+	| jumpStatement
+	| declarationStatement;
+
+declarationStatement:
+	functionDeclarationStatement
+	| typeDeclaration;
+
+typeDeclaration:
+	'type' name = Identifier typeToAlias = type ';'
+	| 'type' '<' params = identifierList '>' name = Identifier typeToAlias = type ';';
+
+identifierList: Identifier (',' Identifier)*;
+
+functionDeclarationStatement:
+	'func' name = Identifier ('(' args = functionArgs ')' | '()') '->' returnType = type body =
+		compoundStatement
+	| 'func' name = Identifier '<' typeParams = identifierList '>' (
+		'(' args = functionArgs ')'
+		| '()'
+	) '->' returnType = type body = compoundStatement;
+
+functionArgs: functionArg (',' functionArg)*;
+functionArg: name = Identifier ':' type;
+
+jumpStatement:
+	'break' ';'
+	| 'continue' ';'
+	| 'return' ';'
+	| 'return' expression ';';
+
+labeledStatement: Identifier ':' statement;
+
+compoundStatement: '{' statement* '}';
+
+selectionStatement:
+	'if' condition = expression then = compoundStatement (
+		'else' else = compoundStatement
+	)?;
+
+expressionStatement: expression ';';
+
+iterationStatement:
+	'while' condition = expression body = compoundStatement
+	| 'for' init = expression ';' condition = expression ';' update = expression body =
+		compoundStatement;
 
 type:
 	typeSpecifier
 	| '(' wrappedType = type ')'
 	| pointeeType = type STAR
-	| elementType = type '[]'
-	| '{' fields = structFieldDeclarationList '}'
-	| opaqueType = type '<' params = typeList '>';
+	| elementType = type '[' arraySize = Integer ']'
+	| '{' fields = structFieldDeclarationList methods = functionDeclarationStatement* '}'
+	| opaqueType = type '<' params = typeList '>'
+	| '$' nameOfFunctionToGetReturnTypeOf = Identifier;
 
-structFieldDeclarationList:
-	structFieldDeclaration (',' structFieldDeclaration)*;
-structFieldDeclaration: field = Identifier ':' fieldType = type;
+structFieldDeclarationList: structFieldDeclaration*;
+structFieldDeclaration:
+	field = Identifier ':' fieldType = type ';';
 
 typeSpecifier:
 	T_U8
@@ -106,14 +159,13 @@ castExpression:
 	| unaryExpression;
 
 unaryExpression:
-	('++' | '--')* (
-		postfixExpression
-		| operator = unaryOperator expr = unaryExpression
-		| 'sizeof' '(' typeToGetSizeOf = type ')'
-		| Identifier
-	);
+	| postfixExpression
+	| sizeofExpression
+	| operator = unaryOperator expr = unaryExpression;
 
-unaryOperator: '&' | '*' | '+' | '-' | '~' | '!';
+sizeofExpression: 'sizeof' '(' typeToGetSizeOf = type ')';
+
+unaryOperator: '&' | '*' | '+' | '-' | '~' | '!' | '++' | '--';
 
 /*
  * A postfix expression is a primary expression followed by zero or more postfix operators.
@@ -123,7 +175,8 @@ postfixExpression:
 		'[' index = expression ']'
 		| '.' field = Identifier
 		| '->' field = Identifier
-		| '(' args = argumentExpressionList? ')'
+		| '(' args = argumentExpressionList ')'
+		| '()'
 		| '++'
 		| '--'
 	)*;
@@ -144,11 +197,15 @@ letExpression: 'let' varName = Identifier ':' varType = type;
 /*
  * An array expression is a list of expressions. e.g. [1, 2, 3]
  */
-arrayExpression: '[' (expression (',' expression)*)? ']';
+arrayExpression: '[' expressionList ']';
+
+expressionList: expression (',' expression)*;
 
 /*
  * A field map is a map of identifiers to expressions. The identifiers are the keys, and the
  * expressions are the values. e.g. {a: 1, b: 2}
  */
-fieldMap: '{' fieldMapEntry+ '}';
-fieldMapEntry: key = Identifier ':' value = expression ',';
+fieldMap: '{' fieldMapEntry+ functionDeclarationStatement* '}';
+fieldMapEntry:
+	key = Identifier ':' value = expression ','
+	| typeOfField = type key = Identifier ',';
