@@ -8,6 +8,7 @@
 #include "OrcaLexer.h"
 #include "OrcaParser.h"
 #include "OrcaParserErrorListener.h"
+#include "TypeChecker.h"
 
 using namespace antlr4;
 using namespace orcagrammar;
@@ -34,6 +35,10 @@ public:
   // default error listener
   void parse();
 
+  // Runs the type checker, any type errors will be caught by
+  // the type checker
+  void typeCheck();
+
 private:
   const std::string &getSourceCode() const { return source_code; }
   const std::string_view getSourceLine(size_t line) const;
@@ -54,6 +59,7 @@ private:
   CommonTokenStream *tokenStream;
   OrcaLexer *lexer;
   OrcaParser *parser;
+  TypeChecker *typeChecker;
 
   OrcaParser::ProgramContext *programContext;
 

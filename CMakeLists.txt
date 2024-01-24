@@ -75,7 +75,7 @@ find_package(ANTLR REQUIRED)
 # Call macro to add lexer and grammar to your build dependencies.
 antlr_target(OrcaLexer OrcaLexer.g4 LEXER
              PACKAGE orcagrammar)
-antlr_target(OrcaParser OrcaParser.g4 PARSER
+antlr_target(OrcaParser OrcaParser.g4 PARSER VISITOR
              PACKAGE orcagrammar
              DEPENDS_ANTLR OrcaLexer
              COMPILE_FLAGS -lib ${ANTLR_OrcaLexer_OUTPUT_DIR})
@@ -90,6 +90,7 @@ add_executable(orca
               src/OrcaLexerErrorListener.cpp
               src/OrcaParserErrorListener.cpp
               src/OrcaError.cpp
+              src/TypeChecker.cpp
               src/OrcaContext.cpp
               ${ANTLR_OrcaLexer_CXX_OUTPUTS}
               ${ANTLR_OrcaParser_CXX_OUTPUTS}

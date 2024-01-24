@@ -1,8 +1,9 @@
-#include "OrcaContext.h"
-#include "OrcaParser.h"
 #include <fstream>
 #include <string>
 #include <string_view>
+
+#include "OrcaContext.h"
+#include "OrcaParser.h"
 
 std::ifstream OrcaContext::openFile(const std::string &filepath) {
   std::ifstream stream;
@@ -31,6 +32,11 @@ void OrcaContext::parse() {
   parser->removeErrorListeners();
   parser->addErrorListener(parserErrorListener);
   programContext = parser->program();
+}
+
+void OrcaContext::typeCheck() {
+  typeChecker = new TypeChecker();
+  typeChecker->visitProgram(programContext);
 }
 
 void OrcaContext::readSourceCode() {
