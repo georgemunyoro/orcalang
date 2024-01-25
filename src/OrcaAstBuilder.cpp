@@ -1,7 +1,6 @@
 #include <any>
 #include <cassert>
 #include <cstdio>
-#include <iostream>
 #include <string>
 
 #include "OrcaAst.h"
@@ -21,8 +20,9 @@ std::any OrcaAstBuilder::visitProgram(OrcaParser::ProgramContext *context) {
 
   for (auto &statement : context->statement()) {
     auto node = visit(statement);
-    if (node.has_value())
+    if (node.has_value()) {
       program->addNode(std::any_cast<OrcaAstNode *>(node));
+    }
   }
 
   if (program->nodes.size() == 0) {
@@ -141,8 +141,10 @@ std::any OrcaAstBuilder::visitConditionalExpression(
 
 std::any OrcaAstBuilder::visitExpressionStatement(
     OrcaParser::ExpressionStatementContext *context) {
-  return (OrcaAstNode *)std::any_cast<OrcaAstExpressionNode *>(
-      visit(context->expression()));
+  auto expr =
+      std::any_cast<OrcaAstExpressionNode *>(visit(context->expression()));
+  return std::any(
+      (OrcaAstNode *)new OrcaAstExpressionStatementNode(context, expr));
 }
 
 std::any OrcaAstBuilder::visitLogicalOrExpression(
@@ -514,16 +516,53 @@ std::any OrcaAstBuilder::visitType(OrcaParser::TypeContext *context) {
 
 std::any OrcaAstBuilder::visitFunctionDeclarationStatement(
     OrcaParser::FunctionDeclarationStatementContext *context) {
-  printf("TODO: FunctionDeclarationStatement\n");
-  exit(1);
-  return std::any();
+
+  // TODO: Type params
+  if (context->typeParams) {
+    printf("TODO: Type params\n");
+    exit(1);
+  }
+
+  std::map<std::string, OrcaAstTypeNode *> params;
+  if (context->args) {
+    for (auto &param : context->args->functionArg()) {
+      auto type = visit(param->type());
+      params[param->name->getText()] = std::any_cast<OrcaAstTypeNode *>(type);
+    }
+  }
+
+  auto returnType =
+      std::any_cast<OrcaAstTypeNode *>(visit(context->returnType));
+  auto functionName = context->name->getText();
+  auto body = (OrcaAstCompoundStatementNode *)std::any_cast<OrcaAstNode *>(
+      visit(context->body));
+
+  OrcaAstFunctionDeclarationNode *funcDecl = new OrcaAstFunctionDeclarationNode(
+      context, functionName, returnType, params, body);
+
+  return std::any((OrcaAstNode *)funcDecl);
 }
 
 std::any OrcaAstBuilder::visitCompoundStatement(
     OrcaParser::CompoundStatementContext *context) {
-  printf("TODO: CompoundStatement\n");
-  exit(1);
-  return std::any();
+
+  std::vector<OrcaAstNode *> nodes;
+
+  for (auto &statement : context->statement()) {
+    auto node = visit(statement);
+
+    if (!node.has_value()) {
+      OrcaError(compileContext, "Expected statement.",
+                context->getStart()->getLine(),
+                context->getStart()->getCharPositionInLine())
+          .print();
+    }
+
+    nodes.push_back(std::any_cast<OrcaAstNode *>(node));
+  }
+
+  return std::any(
+      (OrcaAstNode *)new OrcaAstCompoundStatementNode(context, nodes));
 }
 
 std::any
@@ -538,14 +577,14 @@ OrcaAstBuilder::visitJumpStatement(OrcaParser::JumpStatementContext *context) {
 
   assert(context->RETURN());
 
-  if (context->expression()) {
-    auto expr = visit(context->expression());
-
-    assert(expr.has_value());
-
-    return std::any(new OrcaAstJumpStatementNode(
-        context, "return", std::any_cast<OrcaAstExpressionNode *>(expr)));
+  if (!context->expression()) {
+    return std::any(
+        (OrcaAstNode *)new OrcaAstJumpStatementNode(context, "return"));
   }
 
-  return std::any(new OrcaAstJumpStatementNode(context, "return"));
+  auto expr = visit(context->expression());
+  assert(expr.has_value());
+
+  return std::any((OrcaAstNode *)new OrcaAstJumpStatementNode(
+      context, "return", std::any_cast<OrcaAstExpressionNode *>(expr)));
 }

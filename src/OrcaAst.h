@@ -6,7 +6,6 @@
 
 #include "./utils/printfColors.h"
 #include "OrcaParser.h"
-#include "OrcaType.h"
 
 using namespace orcagrammar;
 using namespace antlr4;
@@ -19,7 +18,26 @@ public:
   virtual std::any accept(OrcaAstVisitor &visitor) = 0;
   virtual void print(int indent) = 0;
 
+  /**
+   * @brief The ANTLR context of the node in the source code. Used for error
+   * reporting, and anywhere where the reference to the source code is needed.
+   */
   ParserRuleContext *parseContext;
+
+  /**
+   * @brief Returns a string representation of the context of this node (with
+   * colors). e.g. [1:0 - 1:5] 'hello'
+   *
+   * @return std::string
+   */
+  std::string contextString() {
+    return std::string(KMAG) + "[" +
+           std::to_string(parseContext->start->getLine()) + ":" +
+           std::to_string(parseContext->start->getCharPositionInLine()) +
+           " - " + std::to_string(parseContext->stop->getLine()) + ":" +
+           std::to_string(parseContext->stop->getCharPositionInLine()) + "]" +
+           KNRM + " " + KBLU + "'" + parseContext->getText() + "'" + KNRM;
+  }
 };
 
 class OrcaAstExpressionNode : public OrcaAstNode {
@@ -49,8 +67,7 @@ public:
   OrcaParser::TypeContext *typeContext;
 
   void print(int indent) override {
-    printf("%*sTypeNode\n", indent, "");
-    printf("%*s%s\n", indent + 2, "", typeContext->getText().c_str());
+    printf("%*sTypeNode %s\n", indent, "", contextString().c_str());
   }
 };
 
@@ -71,10 +88,9 @@ public:
   std::any accept(OrcaAstVisitor &visitor) override;
 
   void print(int indent) override {
-    printf("%*sLetExpressionNode\n", indent, "");
-    printf("%*sname: %s\n", indent + 2, "", name.c_str());
-    printf("%*stype:\n", indent + 2, "");
-    type->print(indent + 4);
+    printf("%*sLetExpressionNode %s%s%s %s\n", indent, "", KYEL, name.c_str(),
+           KNRM, contextString().c_str());
+    type->print(indent + 2);
   }
 
 private:
@@ -96,7 +112,7 @@ public:
   void addNode(OrcaAstNode *node) { nodes.push_back(node); }
 
   void print(int indent) override {
-    printf("%*sProgramNode\n", indent, "");
+    printf("%*sProgramNode %s\n", indent, "", contextString().c_str());
     for (auto &node : nodes) {
       node->print(indent + 2);
     }
@@ -117,13 +133,7 @@ public:
   std::any accept(OrcaAstVisitor &visitor) override;
 
   void print(int indent) override {
-    printf("%*sBinaryExpressionNode %s%s%s %s[%d:%d - %d:%d]%s %s'%s'%s\n",
-           indent, "", KYEL, op.c_str(), KNRM, KMAG,
-           parseContext->start->getLine(),
-           parseContext->start->getCharPositionInLine(),
-           parseContext->stop->getLine(),
-           parseContext->stop->getCharPositionInLine(), KNRM, KBLU,
-           parseContext->getText().c_str(), KNRM);
+    printf("%*sBinaryExpressionNode %s\n", indent, "", contextString().c_str());
     lhs->print(indent + 4);
     rhs->print(indent + 4);
   }
@@ -155,7 +165,7 @@ public:
   std::any accept(OrcaAstVisitor &visitor) override;
 
   void print(int indent) override {
-    printf("%*sUnaryExpressionNode\n", indent, "");
+    printf("%*sUnaryExpressionNode %s\n", indent, "", contextString().c_str());
     printf("%*sexpr:\n", indent + 2, "");
     expr->print(indent + 4);
   }
@@ -178,7 +188,8 @@ public:
   std::any accept(OrcaAstVisitor &visitor) override;
 
   void print(int indent) override {
-    printf("%*sConditionalExpressionNode\n", indent, "");
+    printf("%*sConditionalExpressionNode %s\n", indent, "",
+           contextString().c_str());
     printf("%*scondition:\n", indent + 2, "");
     condition->print(indent + 4);
     printf("%*sthenExpr:\n", indent + 2, "");
@@ -208,7 +219,7 @@ public:
   }
 
   void print(int indent) override {
-    printf("%*sExpressionListNode\n", indent, "");
+    printf("%*sExpressionListNode %s\n", indent, "", contextString().c_str());
     for (auto &expression : expressions) {
       expression->print(indent + 2);
     }
@@ -229,7 +240,7 @@ public:
   std::any accept(OrcaAstVisitor &visitor) override;
 
   void print(int indent) override {
-    printf("%*sTypeDeclarationNode\n", indent, "");
+    printf("%*sTypeDeclarationNode %s\n", indent, "", contextString().c_str());
     printf("%*sname: %s\n", indent + 2, "", name.c_str());
     printf("%*stype:\n", indent + 2, "");
     type->print(indent + 4);
@@ -253,7 +264,8 @@ public:
   std::any accept(OrcaAstVisitor &visitor) override;
 
   void print(int indent) override {
-    printf("%*sTemplateTypeDeclarationNode\n", indent, "");
+    printf("%*sTemplateTypeDeclarationNode %s\n", indent, "",
+           contextString().c_str());
     printf("%*sparams:\n", indent + 2, "");
     for (auto &param : params) {
       printf("%*s%s\n", indent + 4, "", param.c_str());
@@ -282,7 +294,8 @@ public:
   void addNode(OrcaAstNode *node) { nodes.push_back(node); }
 
   void print(int indent) override {
-    printf("%*sCompoundStatementNode\n", indent, "");
+    printf("%*sCompoundStatementNode %s\n", indent, "",
+           contextString().c_str());
     for (auto &node : nodes) {
       node->print(indent + 2);
     }
@@ -290,6 +303,25 @@ public:
 
 private:
   std::vector<OrcaAstNode *> nodes;
+};
+
+class OrcaAstExpressionStatementNode : public OrcaAstStatementNode {
+public:
+  OrcaAstExpressionStatementNode(ParserRuleContext *pContext,
+                                 OrcaAstExpressionNode *expr)
+      : expr(expr) {
+    this->parseContext = pContext;
+  }
+
+  std::any accept(OrcaAstVisitor &visitor) override;
+
+  OrcaAstExpressionNode *expr;
+
+  void print(int indent) override {
+    printf("%*sExpressionStatementNode %s\n", indent, "",
+           contextString().c_str());
+    expr->print(indent + 4);
+  }
 };
 
 class OrcaAstFunctionDeclarationNode : public OrcaAstStatementNode {
@@ -306,14 +338,14 @@ public:
   std::any accept(OrcaAstVisitor &visitor) override;
 
   void print(int indent) override {
-    printf("%*sFunctionDeclarationNode\n", indent, "");
-    printf("%*sname: %s\n", indent + 2, "", name.c_str());
+    printf("%*sFunctionDeclarationNode %s%s%s %s\n", indent, "", KYEL,
+           name.c_str(), KNRM, contextString().c_str());
     printf("%*sreturnType:\n", indent + 2, "");
     returnType->print(indent + 4);
     printf("%*sargs:\n", indent + 2, "");
     for (auto &arg : args) {
-      printf("%*s%s:\n", indent + 4, "", arg.first.c_str());
-      arg.second->print(indent + 6);
+      printf("%*s%s%s%s", indent + 4, "", KYEL, arg.first.c_str(), KNRM);
+      arg.second->print(1);
     }
     printf("%*sbody:\n", indent + 2, "");
     body->print(indent + 4);
@@ -342,10 +374,9 @@ public:
   std::any accept(OrcaAstVisitor &visitor) override;
 
   void print(int indent) override {
-    printf("%*sJumpStatementNode\n", indent, "");
-    printf("%*skeyword: %s\n", indent + 2, "", keyword.c_str());
-    printf("%*sexpr:\n", indent + 2, "");
-    expr->print(indent + 4);
+    printf("%*sJumpStatementNode %s%s%s %s\n", indent, "", KYEL,
+           keyword.c_str(), KNRM, contextString().c_str());
+    expr->print(indent + 2);
   }
 
 private:
@@ -365,7 +396,7 @@ public:
   std::any accept(OrcaAstVisitor &visitor) override;
 
   void print(int indent) override {
-    printf("%*sIndexExpressionNode\n", indent, "");
+    printf("%*sIndexExpressionNode %s\n", indent, "", contextString().c_str());
     printf("%*sexpr:\n", indent + 2, "");
     expr->print(indent + 4);
     printf("%*sindex:\n", indent + 2, "");
@@ -395,7 +426,8 @@ public:
   std::any accept(OrcaAstVisitor &visitor) override;
 
   void print(int indent) override {
-    printf("%*sMemberAccessExpressionNode\n", indent, "");
+    printf("%*sMemberAccessExpressionNode %s\n", indent, "",
+           contextString().c_str());
     printf("%*sexpr:\n", indent + 2, "");
     expr->print(indent + 4);
     printf("%*smember: %s\n", indent + 2, "", member.c_str());
@@ -420,7 +452,8 @@ public:
   std::any accept(OrcaAstVisitor &visitor) override;
 
   void print(int indent) override {
-    printf("%*sFunctionCallExpressionNode\n", indent, "");
+    printf("%*sFunctionCallExpressionNode %s\n", indent, "",
+           contextString().c_str());
     printf("%*sexpr:\n", indent + 2, "");
     expr->print(indent + 4);
     printf("%*sargs:\n", indent + 2, "");
@@ -446,7 +479,8 @@ public:
   std::any accept(OrcaAstVisitor &visitor) override;
 
   void print(int indent) override {
-    printf("%*sPostfixExpressionNode\n", indent, "");
+    printf("%*sPostfixExpressionNode %s\n", indent, "",
+           contextString().c_str());
     printf("%*sexpr:\n", indent + 2, "");
     expr->print(indent + 4);
     printf("%*sop: %s\n", indent + 2, "", op.c_str());
@@ -485,7 +519,8 @@ public:
   std::any accept(OrcaAstVisitor &visitor) override;
 
   void print(int indent) override {
-    printf("%*sFloatLiteralExpressionNode\n", indent, "");
+    printf("%*sFloatLiteralExpressionNode %s\n", indent, "",
+           contextString().c_str());
     printf("%*svalue: %f\n", indent + 2, "", value);
   }
 
@@ -504,7 +539,8 @@ public:
   std::any accept(OrcaAstVisitor &visitor) override;
 
   void print(int indent) override {
-    printf("%*sStringLiteralExpressionNode\n", indent, "");
+    printf("%*sStringLiteralExpressionNode %s\n", indent, "",
+           contextString().c_str());
     printf("%*svalue: %s\n", indent + 2, "", value.c_str());
   }
 

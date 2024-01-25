@@ -31,4 +31,6 @@ public:
   visitStringLiteralExpression(OrcaAstStringLiteralExpressionNode *node) = 0;
   virtual std::any
   visitBooleanLiteralExpression(OrcaAstBooleanLiteralExpressionNode *node) = 0;
+  virtual std::any
+  visitExpressionStatement(OrcaAstExpressionStatementNode *node) = 0;
 };
