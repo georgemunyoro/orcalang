@@ -81,9 +81,7 @@ public:
   visitShiftExpression(OrcaParser::ShiftExpressionContext *context) override;
 
   std::any visitAdditiveExpression(
-      OrcaParser::AdditiveExpressionContext *context) override {
-    throw "TODO";
-  };
+      OrcaParser::AdditiveExpressionContext *context) override;
 
   std::any visitMultiplicativeExpression(
       OrcaParser::MultiplicativeExpressionContext *context) override {
