@@ -75,10 +75,7 @@ public:
       OrcaParser::EqualityExpressionContext *context) override;
 
   std::any visitRelationalExpression(
-      OrcaParser::RelationalExpressionContext *context) override {
-    printf("visitRelationalExpression\n");
-    throw "TODO";
-  };
+      OrcaParser::RelationalExpressionContext *context) override;
 
   std::any
   visitShiftExpression(OrcaParser::ShiftExpressionContext *context) override {
