@@ -78,10 +78,7 @@ public:
       OrcaParser::RelationalExpressionContext *context) override;
 
   std::any
-  visitShiftExpression(OrcaParser::ShiftExpressionContext *context) override {
-    printf("visitShiftExpression\n");
-    throw "TODO";
-  };
+  visitShiftExpression(OrcaParser::ShiftExpressionContext *context) override;
 
   std::any visitAdditiveExpression(
       OrcaParser::AdditiveExpressionContext *context) override {
