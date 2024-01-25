@@ -84,10 +84,7 @@ public:
       OrcaParser::AdditiveExpressionContext *context) override;
 
   std::any visitMultiplicativeExpression(
-      OrcaParser::MultiplicativeExpressionContext *context) override {
-    printf("visitMultiplicativeExpression\n");
-    throw "TODO";
-  };
+      OrcaParser::MultiplicativeExpressionContext *context) override;
 
   std::any
   visitCastExpression(OrcaParser::CastExpressionContext *context) override {
