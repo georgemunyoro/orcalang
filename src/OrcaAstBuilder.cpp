@@ -268,6 +268,34 @@ OrcaAstBuilder::visitAndExpression(OrcaParser::AndExpressionContext *context) {
   return visit(context->lhs);
 }
 
+std::any OrcaAstBuilder::visitEqualityExpression(
+    OrcaParser::EqualityExpressionContext *context) {
+  // Equality expression
+  if (context->rhs) {
+    OrcaAstExpressionNode *lhs = nullptr;
+
+    int i = 0;
+    for (auto &expr : context->relationalExpression()) {
+      std::any logicalAnd = visit(expr);
+
+      if (lhs == nullptr) {
+        lhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
+        continue;
+      }
+
+      std::string op = context->children.at((i * 2) - 1)->getText();
+      auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
+      lhs = new OrcaAstBinaryExpressionNode(lhs, rhs, op);
+      ++i;
+    }
+
+    return std::any(lhs);
+  }
+
+  // Fall through to relational expression
+  return visit(context->lhs);
+}
+
 std::any OrcaAstBuilder::visitSizeofExpression(
     OrcaParser::SizeofExpressionContext *context) {
 

@@ -72,10 +72,7 @@ public:
   visitAndExpression(OrcaParser::AndExpressionContext *context) override;
 
   std::any visitEqualityExpression(
-      OrcaParser::EqualityExpressionContext *context) override {
-    printf("visitEqualityExpression\n");
-    throw "TODO";
-  };
+      OrcaParser::EqualityExpressionContext *context) override;
 
   std::any visitRelationalExpression(
       OrcaParser::RelationalExpressionContext *context) override {
