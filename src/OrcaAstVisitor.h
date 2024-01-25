@@ -21,4 +21,14 @@ public:
   visitFunctionDeclarationStatement(OrcaAstFunctionDeclarationNode *node) = 0;
   virtual std::any visitJumpStatement(OrcaAstJumpStatementNode *node) = 0;
   virtual std::any visitBinaryExpression(OrcaAstBinaryExpressionNode *node) = 0;
+  virtual std::any
+  visitIdentifierExpression(OrcaAstIdentifierExpressionNode *node) = 0;
+  virtual std::any
+  visitIntegerLiteralExpression(OrcaAstIntegerLiteralExpressionNode *node) = 0;
+  virtual std::any
+  visitFloatLiteralExpression(OrcaAstFloatLiteralExpressionNode *node) = 0;
+  virtual std::any
+  visitStringLiteralExpression(OrcaAstStringLiteralExpressionNode *node) = 0;
+  virtual std::any
+  visitBooleanLiteralExpression(OrcaAstBooleanLiteralExpressionNode *node) = 0;
 };

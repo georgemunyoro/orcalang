@@ -17,7 +17,7 @@ OrcaAstProgramNode *OrcaAstBuilder::build() {
 
 std::any OrcaAstBuilder::visitProgram(OrcaParser::ProgramContext *context) {
 
-  OrcaAstProgramNode *program = new OrcaAstProgramNode({});
+  OrcaAstProgramNode *program = new OrcaAstProgramNode(context, {});
 
   for (auto &statement : context->statement()) {
     auto node = visit(statement);
@@ -43,7 +43,8 @@ OrcaAstBuilder::visitExpression(OrcaParser::ExpressionContext *context) {
 
 std::any OrcaAstBuilder::visitExpressionList(
     OrcaParser::ExpressionListContext *context) {
-  OrcaAstExpressionListNode *expressionList = new OrcaAstExpressionListNode({});
+  OrcaAstExpressionListNode *expressionList =
+      new OrcaAstExpressionListNode(context, {});
 
   for (auto &child : context->expression()) {
     auto node = visit(child);
@@ -59,10 +60,10 @@ std::any OrcaAstBuilder::visitExpressionList(
 
 std::any
 OrcaAstBuilder::visitLetExpression(OrcaParser::LetExpressionContext *context) {
-
-  printf("VISITING LET\n");
-
-  return std::any();
+  std::string varName = context->varName->getText();
+  auto type = std::any_cast<OrcaAstTypeNode *>(visit(context->varType));
+  return (OrcaAstExpressionNode *)new OrcaAstLetExpressionNode(context, varName,
+                                                               type);
 }
 
 std::any OrcaAstBuilder::visitAssignmentExpression(
@@ -80,24 +81,22 @@ std::any OrcaAstBuilder::visitAssignmentExpression(
 
   OrcaAstAssignmentExpressionNode *assignmentNode =
       new OrcaAstAssignmentExpressionNode(
-          std::any_cast<OrcaAstExpressionNode *>(lhs),
+          context, std::any_cast<OrcaAstExpressionNode *>(lhs),
           std::any_cast<OrcaAstExpressionNode *>(rhs), op);
 
-  return std::any(assignmentNode);
+  return std::any((OrcaAstExpressionNode *)assignmentNode);
 }
 
 std::any OrcaAstBuilder::visitUnaryExpression(
     OrcaParser::UnaryExpressionContext *context) {
-  printf("VISITING UNARY\n");
-
   if (context->children.size() == 1) {
     return visit(context->children.at(0));
   }
 
   assert(context->children.size() == 2);
 
-  auto op = context->children.at(0)->getText();
-  auto expr = visit(context->children.at(1));
+  auto op = context->op->getText();
+  auto expr = visit(context->expr);
 
   if (!expr.has_value()) {
     OrcaError(compileContext, "Expected expression after unary operator.",
@@ -107,32 +106,34 @@ std::any OrcaAstBuilder::visitUnaryExpression(
   }
 
   OrcaAstUnaryExpressionNode *unaryNode = new OrcaAstUnaryExpressionNode(
-      std::any_cast<OrcaAstExpressionNode *>(expr), op);
+      context, std::any_cast<OrcaAstExpressionNode *>(expr), op);
 
-  return std::any(unaryNode);
+  return std::any((OrcaAstExpressionNode *)unaryNode);
 }
 
 std::any OrcaAstBuilder::visitConditionalExpression(
     OrcaParser::ConditionalExpressionContext *context) {
 
   // Ternary conditional expression
-  if (context->trueExpr) {
+  if (context->condition) {
     auto condition = visit(context->condition);
-    auto trueExpr = visit(context->trueExpr);
+    auto thenExpr = visit(context->thenExpr);
     auto elseExpr = visit(context->elseExpr);
 
     assert(condition.has_value());
-    assert(trueExpr.has_value());
+    assert(thenExpr.has_value());
     assert(elseExpr.has_value());
 
     OrcaAstConditionalExpressionNode *conditionalNode =
         new OrcaAstConditionalExpressionNode(
-            std::any_cast<OrcaAstExpressionNode *>(condition),
-            std::any_cast<OrcaAstExpressionNode *>(trueExpr),
+            context, std::any_cast<OrcaAstExpressionNode *>(condition),
+            std::any_cast<OrcaAstExpressionNode *>(thenExpr),
             std::any_cast<OrcaAstExpressionNode *>(elseExpr));
 
-    return std::any(conditionalNode);
+    return std::any((OrcaAstExpressionNode *)conditionalNode);
   }
+
+  assert(context->children.size() == 1);
 
   // Fall through to logical or expression
   return visit(context->logicalOrExpression());
@@ -140,7 +141,8 @@ std::any OrcaAstBuilder::visitConditionalExpression(
 
 std::any OrcaAstBuilder::visitExpressionStatement(
     OrcaParser::ExpressionStatementContext *context) {
-  return visit(context->expression());
+  return (OrcaAstNode *)std::any_cast<OrcaAstExpressionNode *>(
+      visit(context->expression()));
 }
 
 std::any OrcaAstBuilder::visitLogicalOrExpression(
@@ -158,10 +160,10 @@ std::any OrcaAstBuilder::visitLogicalOrExpression(
       }
 
       auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-      lhs = new OrcaAstBinaryExpressionNode(lhs, rhs, "||");
+      lhs = new OrcaAstBinaryExpressionNode(context, lhs, rhs, "||");
     }
 
-    return std::any(lhs);
+    return std::any((OrcaAstExpressionNode *)lhs);
   }
 
   // Fall through to logical and expression
@@ -183,10 +185,10 @@ std::any OrcaAstBuilder::visitLogicalAndExpression(
       }
 
       auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-      lhs = new OrcaAstBinaryExpressionNode(lhs, rhs, "&&");
+      lhs = new OrcaAstBinaryExpressionNode(expr, lhs, rhs, "&&");
     }
 
-    return std::any(lhs);
+    return std::any((OrcaAstExpressionNode *)lhs);
   }
 
   // Fall through to inclusive or expression
@@ -208,10 +210,10 @@ std::any OrcaAstBuilder::visitInclusiveOrExpression(
       }
 
       auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-      lhs = new OrcaAstBinaryExpressionNode(lhs, rhs, "|");
+      lhs = new OrcaAstBinaryExpressionNode(expr, lhs, rhs, "|");
     }
 
-    return std::any(lhs);
+    return std::any((OrcaAstExpressionNode *)lhs);
   }
 
   // Fall through to exclusive or expression
@@ -233,10 +235,10 @@ std::any OrcaAstBuilder::visitExclusiveOrExpression(
       }
 
       auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-      lhs = new OrcaAstBinaryExpressionNode(lhs, rhs, "^");
+      lhs = new OrcaAstBinaryExpressionNode(expr, lhs, rhs, "^");
     }
 
-    return std::any(lhs);
+    return std::any((OrcaAstExpressionNode *)lhs);
   }
 
   // Fall through to and expression
@@ -258,10 +260,10 @@ OrcaAstBuilder::visitAndExpression(OrcaParser::AndExpressionContext *context) {
       }
 
       auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-      lhs = new OrcaAstBinaryExpressionNode(lhs, rhs, "&");
+      lhs = new OrcaAstBinaryExpressionNode(expr, lhs, rhs, "&");
     }
 
-    return std::any(lhs);
+    return std::any((OrcaAstExpressionNode *)lhs);
   }
 
   // Fall through to equality expression
@@ -272,24 +274,15 @@ std::any OrcaAstBuilder::visitEqualityExpression(
     OrcaParser::EqualityExpressionContext *context) {
   // Equality expression
   if (context->rhs) {
-    OrcaAstExpressionNode *lhs = nullptr;
+    assert(context->children.size() == 3);
 
-    int i = 0;
-    for (auto &expr : context->relationalExpression()) {
-      std::any logicalAnd = visit(expr);
+    auto lhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->lhs));
+    auto rhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->rhs));
 
-      if (lhs == nullptr) {
-        lhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-        continue;
-      }
+    std::string op = context->children.at(1)->getText();
 
-      std::string op = context->children.at((i * 2) - 1)->getText();
-      auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-      lhs = new OrcaAstBinaryExpressionNode(lhs, rhs, op);
-      ++i;
-    }
-
-    return std::any(lhs);
+    return std::any((OrcaAstExpressionNode *)new OrcaAstBinaryExpressionNode(
+        context, lhs, rhs, op));
   }
 
   // Fall through to relational expression
@@ -302,7 +295,7 @@ std::any OrcaAstBuilder::visitRelationalExpression(
   if (context->rhs) {
     OrcaAstExpressionNode *lhs = nullptr;
 
-    int i = 0;
+    int i = 1;
     for (auto &expr : context->shiftExpression()) {
       std::any logicalAnd = visit(expr);
 
@@ -313,11 +306,11 @@ std::any OrcaAstBuilder::visitRelationalExpression(
 
       std::string op = context->children.at((i * 2) - 1)->getText();
       auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-      lhs = new OrcaAstBinaryExpressionNode(lhs, rhs, op);
+      lhs = new OrcaAstBinaryExpressionNode(expr, lhs, rhs, op);
       ++i;
     }
 
-    return std::any(lhs);
+    return std::any((OrcaAstExpressionNode *)lhs);
   }
 
   // Fall through to shift expression
@@ -330,7 +323,7 @@ std::any OrcaAstBuilder::visitShiftExpression(
   if (context->rhs) {
     OrcaAstExpressionNode *lhs = nullptr;
 
-    int i = 0;
+    int i = 1;
     for (auto &expr : context->additiveExpression()) {
       std::any logicalAnd = visit(expr);
 
@@ -341,11 +334,11 @@ std::any OrcaAstBuilder::visitShiftExpression(
 
       std::string op = context->children.at((i * 2) - 1)->getText();
       auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-      lhs = new OrcaAstBinaryExpressionNode(lhs, rhs, op);
+      lhs = new OrcaAstBinaryExpressionNode(expr, lhs, rhs, op);
       ++i;
     }
 
-    return std::any(lhs);
+    return std::any((OrcaAstExpressionNode *)lhs);
   }
 
   // Fall through to additive expression
@@ -358,7 +351,7 @@ std::any OrcaAstBuilder::visitAdditiveExpression(
   if (context->rhs) {
     OrcaAstExpressionNode *lhs = nullptr;
 
-    int i = 0;
+    int i = 1;
     for (auto &expr : context->multiplicativeExpression()) {
       std::any logicalAnd = visit(expr);
 
@@ -369,11 +362,11 @@ std::any OrcaAstBuilder::visitAdditiveExpression(
 
       std::string op = context->children.at((i * 2) - 1)->getText();
       auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-      lhs = new OrcaAstBinaryExpressionNode(lhs, rhs, op);
+      lhs = new OrcaAstBinaryExpressionNode(expr, lhs, rhs, op);
       ++i;
     }
 
-    return std::any(lhs);
+    return std::any((OrcaAstExpressionNode *)lhs);
   }
 
   // Fall through to multiplicative expression
@@ -386,7 +379,7 @@ std::any OrcaAstBuilder::visitMultiplicativeExpression(
   if (context->rhs) {
     OrcaAstExpressionNode *lhs = nullptr;
 
-    int i = 0;
+    int i = 1;
     for (auto &expr : context->castExpression()) {
       std::any logicalAnd = visit(expr);
 
@@ -397,15 +390,29 @@ std::any OrcaAstBuilder::visitMultiplicativeExpression(
 
       std::string op = context->children.at((i * 2) - 1)->getText();
       auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-      lhs = new OrcaAstBinaryExpressionNode(lhs, rhs, op);
+      lhs = new OrcaAstBinaryExpressionNode(expr, lhs, rhs, op);
       ++i;
     }
 
-    return std::any(lhs);
+    return std::any((OrcaAstExpressionNode *)lhs);
   }
 
   // Fall through to cast expression
   return visit(context->lhs);
+}
+
+std::any OrcaAstBuilder::visitCastExpression(
+    OrcaParser::CastExpressionContext *context) {
+  // Cast expression
+  if (context->typeToCastTo) {
+    // TODO: Implement cast expression
+    printf("TODO: Implement cast expression\n");
+    throw "TODO";
+    exit(1);
+  }
+
+  // Fall through to unary expression
+  return visit(context->unaryExpression());
 }
 
 std::any OrcaAstBuilder::visitSizeofExpression(
@@ -419,20 +426,62 @@ std::any OrcaAstBuilder::visitSizeofExpression(
 std::any OrcaAstBuilder::visitPostfixExpression(
     OrcaParser::PostfixExpressionContext *context) {
 
-  if (context->children.size() == 1) {
-    return visit(context->children.at(0));
-  }
+  assert(context->primaryExpression());
 
-  printf("VISITING POSTFIX\n");
+  OrcaAstExpressionNode *expr = std::any_cast<OrcaAstExpressionNode *>(
+      visit(context->primaryExpression()));
 
-  std::cout << context->toStringTree() << std::endl;
+  // Postfix expression
+  // TODO: Implement postfix expression
+  assert(context->children.size() == 1);
 
-  return std::any();
+  return std::any(expr);
 }
 
 std::any OrcaAstBuilder::visitPrimaryExpression(
     OrcaParser::PrimaryExpressionContext *context) {
 
+  // Identifier
+  if (context->Identifier()) {
+    return std::any(
+        (OrcaAstExpressionNode *)new OrcaAstIdentifierExpressionNode(
+            context, context->Identifier()->getText()));
+  }
+
+  // Constants
+  if (context->Integer()) {
+    int value = std::stoi(context->Integer()->getText());
+    return std::any(
+        (OrcaAstExpressionNode *)new OrcaAstIntegerLiteralExpressionNode(
+            context, value));
+  }
+
+  if (context->Float()) {
+    float value = std::stof(context->Float()->getText());
+    return std::any(
+        (OrcaAstExpressionNode *)new OrcaAstFloatLiteralExpressionNode(context,
+                                                                       value));
+  }
+
+  if (context->String()) {
+    std::string value = context->String()->getText();
+    return std::any(
+        (OrcaAstExpressionNode *)new OrcaAstStringLiteralExpressionNode(context,
+                                                                        value));
+  }
+
+  if (context->Boolean()) {
+    assert(context->Boolean()->getText() == "true" ||
+           context->Boolean()->getText() == "false");
+
+    bool value = context->Boolean()->getText() == "true";
+
+    return std::any(
+        (OrcaAstExpressionNode *)new OrcaAstBooleanLiteralExpressionNode(
+            context, value));
+  }
+
+  // let expression / array expression / field map
   if (context->children.size() == 1) {
     return visit(context->children.at(0));
   }
@@ -446,7 +495,7 @@ std::any OrcaAstBuilder::visitPrimaryExpression(
           .print();
     }
 
-    return visit(context->children.at(1));
+    return visit(context->expression());
   }
 
   OrcaError(compileContext,
@@ -490,7 +539,7 @@ std::any OrcaAstBuilder::visitTypeDeclaration(
 
     OrcaAstTemplateTypeDeclarationNode *typeDecl =
         new OrcaAstTemplateTypeDeclarationNode(
-            params, name, std::any_cast<OrcaAstTypeNode *>(type));
+            context, params, name, std::any_cast<OrcaAstTypeNode *>(type));
 
     return std::any((OrcaAstNode *)typeDecl);
   }
@@ -500,7 +549,7 @@ std::any OrcaAstBuilder::visitTypeDeclaration(
   auto type = visit(context->typeToAlias);
 
   OrcaAstTypeDeclarationNode *typeDecl = new OrcaAstTypeDeclarationNode(
-      name, std::any_cast<OrcaAstTypeNode *>(type));
+      context, name, std::any_cast<OrcaAstTypeNode *>(type));
 
   return std::any((OrcaAstNode *)typeDecl);
 }
@@ -526,13 +575,11 @@ std::any OrcaAstBuilder::visitCompoundStatement(
 std::any
 OrcaAstBuilder::visitJumpStatement(OrcaParser::JumpStatementContext *context) {
   if (context->BREAK()) {
-    return std::any(
-        new OrcaAstJumpStatementNode(OrcaAstJumpStatementNode("break")));
+    return std::any(new OrcaAstJumpStatementNode(context, "break"));
   }
 
   if (context->CONTINUE()) {
-    return std::any(
-        new OrcaAstJumpStatementNode(OrcaAstJumpStatementNode("continue")));
+    return std::any(new OrcaAstJumpStatementNode(context, "continue"));
   }
 
   assert(context->RETURN());
@@ -542,10 +589,9 @@ OrcaAstBuilder::visitJumpStatement(OrcaParser::JumpStatementContext *context) {
 
     assert(expr.has_value());
 
-    return std::any(new OrcaAstJumpStatementNode(OrcaAstJumpStatementNode(
-        "return", std::any_cast<OrcaAstExpressionNode *>(expr))));
+    return std::any(new OrcaAstJumpStatementNode(
+        context, "return", std::any_cast<OrcaAstExpressionNode *>(expr)));
   }
 
-  return std::any(
-      new OrcaAstJumpStatementNode(OrcaAstJumpStatementNode("return")));
+  return std::any(new OrcaAstJumpStatementNode(context, "return"));
 }

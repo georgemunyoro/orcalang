@@ -94,7 +94,7 @@ expression: assignmentExpression;
 
 assignmentExpression:
 	conditionalExpression
-	| lhs = unaryExpression operator = assignmentOperator rhs = assignmentExpression;
+	| lhs = unaryExpression op = assignmentOperator rhs = assignmentExpression;
 
 assignmentOperator:
 	'='
@@ -110,9 +110,8 @@ assignmentOperator:
 	| '|=';
 
 conditionalExpression:
-	condition = logicalOrExpression (
-		'?' trueExpr = expression ':' elseExpr = conditionalExpression
-	)?;
+	logicalOrExpression
+	| condition = logicalOrExpression '?' thenExpr = expression ':' elseExpr = conditionalExpression;
 
 logicalOrExpression:
 	lhs = logicalAndExpression ('||' rhs = logicalAndExpression)*;
@@ -135,6 +134,11 @@ equalityExpression:
 	lhs = relationalExpression (
 		('==' | '!=') rhs = relationalExpression
 	)*;
+
+equalityExpression:
+	relationalExpression
+	| lhs = relationalExpression '==' rhs = relationalExpression
+	| lhs = relationalExpression '!=' rhs = relationalExpression;
 
 relationalExpression:
 	lhs = shiftExpression (
@@ -161,7 +165,7 @@ castExpression:
 unaryExpression:
 	| postfixExpression
 	| sizeofExpression
-	| operator = unaryOperator expr = unaryExpression;
+	| op = unaryOperator expr = unaryExpression;
 
 sizeofExpression: 'sizeof' '(' typeToGetSizeOf = type ')';
 
@@ -185,7 +189,10 @@ argumentExpressionList: expression (',' expression)*;
 
 primaryExpression:
 	letExpression
-	| Constant
+	| Integer
+	| Float
+	| Char
+	| Boolean
 	| String
 	| Identifier
 	| arrayExpression

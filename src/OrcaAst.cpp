@@ -53,3 +53,23 @@ std::any OrcaAstFunctionDeclarationNode::accept(OrcaAstVisitor &visitor) {
 std::any OrcaAstBinaryExpressionNode::accept(OrcaAstVisitor &visitor) {
   return visitor.visitBinaryExpression(this);
 }
+
+std::any OrcaAstIdentifierExpressionNode::accept(OrcaAstVisitor &visitor) {
+  return visitor.visitIdentifierExpression(this);
+}
+
+std::any OrcaAstIntegerLiteralExpressionNode::accept(OrcaAstVisitor &visitor) {
+  return visitor.visitIntegerLiteralExpression(this);
+}
+
+std::any OrcaAstFloatLiteralExpressionNode::accept(OrcaAstVisitor &visitor) {
+  return visitor.visitFloatLiteralExpression(this);
+}
+
+std::any OrcaAstStringLiteralExpressionNode::accept(OrcaAstVisitor &visitor) {
+  return visitor.visitStringLiteralExpression(this);
+}
+
+std::any OrcaAstBooleanLiteralExpressionNode::accept(OrcaAstVisitor &visitor) {
+  return visitor.visitBooleanLiteralExpression(this);
+}

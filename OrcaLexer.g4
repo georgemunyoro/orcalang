@@ -1,6 +1,6 @@
 lexer grammar OrcaLexer;
 
-Constant: Integer | Float | Char | Boolean;
+// Constant: Integer | Float | Char | Boolean;
 Integer: DIGIT_NON_ZERO DIGIT* | DIGIT;
 Float: DIGIT+ '.' DIGIT+;
 String: '"' .*? '"';
