@@ -183,7 +183,7 @@ std::any OrcaAstBuilder::visitLogicalAndExpression(
       }
 
       auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-      lhs = new OrcaAstBinaryExpressionNode(lhs, rhs, "||");
+      lhs = new OrcaAstBinaryExpressionNode(lhs, rhs, "&&");
     }
 
     return std::any(lhs);
@@ -208,7 +208,7 @@ std::any OrcaAstBuilder::visitInclusiveOrExpression(
       }
 
       auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-      lhs = new OrcaAstBinaryExpressionNode(lhs, rhs, "||");
+      lhs = new OrcaAstBinaryExpressionNode(lhs, rhs, "|");
     }
 
     return std::any(lhs);
