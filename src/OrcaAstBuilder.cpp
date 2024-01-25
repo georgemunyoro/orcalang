@@ -193,6 +193,31 @@ std::any OrcaAstBuilder::visitLogicalAndExpression(
   return visit(context->lhs);
 }
 
+std::any OrcaAstBuilder::visitInclusiveOrExpression(
+    OrcaParser::InclusiveOrExpressionContext *context) {
+  // Inclusive or expression
+  if (context->rhs) {
+    OrcaAstExpressionNode *lhs = nullptr;
+
+    for (auto &expr : context->exclusiveOrExpression()) {
+      std::any logicalAnd = visit(expr);
+
+      if (lhs == nullptr) {
+        lhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
+        continue;
+      }
+
+      auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
+      lhs = new OrcaAstBinaryExpressionNode(lhs, rhs, "||");
+    }
+
+    return std::any(lhs);
+  }
+
+  // Fall through to exclusive or expression
+  return visit(context->lhs);
+}
+
 std::any OrcaAstBuilder::visitSizeofExpression(
     OrcaParser::SizeofExpressionContext *context) {
 
