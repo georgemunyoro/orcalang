@@ -149,125 +149,105 @@ std::any OrcaAstBuilder::visitLogicalOrExpression(
     OrcaParser::LogicalOrExpressionContext *context) {
   // Logical or expression
   if (context->rhs) {
-    OrcaAstExpressionNode *lhs = nullptr;
+    assert(context->children.size() == 3);
 
-    for (auto &expr : context->logicalAndExpression()) {
-      std::any logicalAnd = visit(expr);
+    auto lhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->lhs));
+    auto rhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->rhs));
 
-      if (lhs == nullptr) {
-        lhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-        continue;
-      }
+    std::string op = context->children.at(1)->getText();
 
-      auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-      lhs = new OrcaAstBinaryExpressionNode(context, lhs, rhs, "||");
-    }
-
-    return std::any((OrcaAstExpressionNode *)lhs);
+    return std::any((OrcaAstExpressionNode *)new OrcaAstBinaryExpressionNode(
+        context, lhs, rhs, op));
   }
 
+  assert(context->children.size() == 1);
+
   // Fall through to logical and expression
-  return visit(context->lhs);
+  return visit(context->children.at(0));
 }
 
 std::any OrcaAstBuilder::visitLogicalAndExpression(
     OrcaParser::LogicalAndExpressionContext *context) {
   // Logical and expression
   if (context->rhs) {
-    OrcaAstExpressionNode *lhs = nullptr;
+    assert(context->children.size() == 3);
 
-    for (auto &expr : context->inclusiveOrExpression()) {
-      std::any logicalAnd = visit(expr);
+    auto lhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->lhs));
+    auto rhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->rhs));
 
-      if (lhs == nullptr) {
-        lhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-        continue;
-      }
+    std::string op = context->children.at(1)->getText();
 
-      auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-      lhs = new OrcaAstBinaryExpressionNode(expr, lhs, rhs, "&&");
-    }
-
-    return std::any((OrcaAstExpressionNode *)lhs);
+    return std::any((OrcaAstExpressionNode *)new OrcaAstBinaryExpressionNode(
+        context, lhs, rhs, op));
   }
 
+  assert(context->children.size() == 1);
+
   // Fall through to inclusive or expression
-  return visit(context->lhs);
+  return visit(context->children.at(0));
 }
 
 std::any OrcaAstBuilder::visitInclusiveOrExpression(
     OrcaParser::InclusiveOrExpressionContext *context) {
   // Inclusive or expression
   if (context->rhs) {
-    OrcaAstExpressionNode *lhs = nullptr;
+    assert(context->children.size() == 3);
 
-    for (auto &expr : context->exclusiveOrExpression()) {
-      std::any logicalAnd = visit(expr);
+    auto lhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->lhs));
+    auto rhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->rhs));
 
-      if (lhs == nullptr) {
-        lhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-        continue;
-      }
+    std::string op = context->children.at(1)->getText();
 
-      auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-      lhs = new OrcaAstBinaryExpressionNode(expr, lhs, rhs, "|");
-    }
-
-    return std::any((OrcaAstExpressionNode *)lhs);
+    return std::any((OrcaAstExpressionNode *)new OrcaAstBinaryExpressionNode(
+        context, lhs, rhs, op));
   }
 
+  assert(context->children.size() == 1);
+
   // Fall through to exclusive or expression
-  return visit(context->lhs);
+  return visit(context->children.at(0));
 }
 
 std::any OrcaAstBuilder::visitExclusiveOrExpression(
     OrcaParser::ExclusiveOrExpressionContext *context) {
   // Exclusive or expression
   if (context->rhs) {
-    OrcaAstExpressionNode *lhs = nullptr;
+    assert(context->children.size() == 3);
 
-    for (auto &expr : context->andExpression()) {
-      std::any logicalAnd = visit(expr);
+    auto lhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->lhs));
+    auto rhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->rhs));
 
-      if (lhs == nullptr) {
-        lhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-        continue;
-      }
+    std::string op = context->children.at(1)->getText();
 
-      auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-      lhs = new OrcaAstBinaryExpressionNode(expr, lhs, rhs, "^");
-    }
-
-    return std::any((OrcaAstExpressionNode *)lhs);
+    return std::any((OrcaAstExpressionNode *)new OrcaAstBinaryExpressionNode(
+        context, lhs, rhs, op));
   }
 
+  assert(context->children.size() == 1);
+
   // Fall through to and expression
-  return visit(context->lhs);
+  return visit(context->children.at(0));
 }
 
 std::any
 OrcaAstBuilder::visitAndExpression(OrcaParser::AndExpressionContext *context) {
   // And expression
   if (context->rhs) {
-    OrcaAstExpressionNode *lhs = nullptr;
+    assert(context->children.size() == 3);
 
-    for (auto &expr : context->equalityExpression()) {
-      std::any logicalAnd = visit(expr);
+    auto lhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->lhs));
+    auto rhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->rhs));
 
-      if (lhs == nullptr) {
-        lhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-        continue;
-      }
+    std::string op = context->children.at(1)->getText();
 
-      auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-      lhs = new OrcaAstBinaryExpressionNode(expr, lhs, rhs, "&");
-    }
-
-    return std::any((OrcaAstExpressionNode *)lhs);
+    return std::any((OrcaAstExpressionNode *)new OrcaAstBinaryExpressionNode(
+        context, lhs, rhs, op));
   }
 
+  assert(context->children.size() == 1);
+
   // Fall through to equality expression
-  return visit(context->lhs);
+  return visit(context->children.at(0));
 }
 
 std::any OrcaAstBuilder::visitEqualityExpression(
@@ -285,120 +265,94 @@ std::any OrcaAstBuilder::visitEqualityExpression(
         context, lhs, rhs, op));
   }
 
+  assert(context->children.size() == 1);
+
   // Fall through to relational expression
-  return visit(context->lhs);
+  return visit(context->children.at(0));
 }
 
 std::any OrcaAstBuilder::visitRelationalExpression(
     OrcaParser::RelationalExpressionContext *context) {
   // Relational expression
   if (context->rhs) {
-    OrcaAstExpressionNode *lhs = nullptr;
+    assert(context->children.size() == 3);
 
-    int i = 1;
-    for (auto &expr : context->shiftExpression()) {
-      std::any logicalAnd = visit(expr);
+    auto lhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->lhs));
+    auto rhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->rhs));
 
-      if (lhs == nullptr) {
-        lhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-        continue;
-      }
+    std::string op = context->children.at(1)->getText();
 
-      std::string op = context->children.at((i * 2) - 1)->getText();
-      auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-      lhs = new OrcaAstBinaryExpressionNode(expr, lhs, rhs, op);
-      ++i;
-    }
-
-    return std::any((OrcaAstExpressionNode *)lhs);
+    return std::any((OrcaAstExpressionNode *)new OrcaAstBinaryExpressionNode(
+        context, lhs, rhs, op));
   }
 
+  assert(context->children.size() == 1);
+
   // Fall through to shift expression
-  return visit(context->lhs);
+  return visit(context->children.at(0));
 }
 
 std::any OrcaAstBuilder::visitShiftExpression(
     OrcaParser::ShiftExpressionContext *context) {
   // Shift expression
   if (context->rhs) {
-    OrcaAstExpressionNode *lhs = nullptr;
+    assert(context->children.size() == 3);
 
-    int i = 1;
-    for (auto &expr : context->additiveExpression()) {
-      std::any logicalAnd = visit(expr);
+    auto lhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->lhs));
+    auto rhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->rhs));
 
-      if (lhs == nullptr) {
-        lhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-        continue;
-      }
+    std::string op = context->children.at(1)->getText();
 
-      std::string op = context->children.at((i * 2) - 1)->getText();
-      auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-      lhs = new OrcaAstBinaryExpressionNode(expr, lhs, rhs, op);
-      ++i;
-    }
-
-    return std::any((OrcaAstExpressionNode *)lhs);
+    return std::any((OrcaAstExpressionNode *)new OrcaAstBinaryExpressionNode(
+        context, lhs, rhs, op));
   }
 
+  assert(context->children.size() == 1);
+
   // Fall through to additive expression
-  return visit(context->lhs);
+  return visit(context->children.at(0));
 }
 
 std::any OrcaAstBuilder::visitAdditiveExpression(
     OrcaParser::AdditiveExpressionContext *context) {
   // Additive expression
   if (context->rhs) {
-    OrcaAstExpressionNode *lhs = nullptr;
+    assert(context->children.size() == 3);
 
-    int i = 1;
-    for (auto &expr : context->multiplicativeExpression()) {
-      std::any logicalAnd = visit(expr);
+    auto lhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->lhs));
+    auto rhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->rhs));
 
-      if (lhs == nullptr) {
-        lhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-        continue;
-      }
+    std::string op = context->children.at(1)->getText();
 
-      std::string op = context->children.at((i * 2) - 1)->getText();
-      auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-      lhs = new OrcaAstBinaryExpressionNode(expr, lhs, rhs, op);
-      ++i;
-    }
-
-    return std::any((OrcaAstExpressionNode *)lhs);
+    return std::any((OrcaAstExpressionNode *)new OrcaAstBinaryExpressionNode(
+        context, lhs, rhs, op));
   }
 
+  assert(context->children.size() == 1);
+
   // Fall through to multiplicative expression
-  return visit(context->lhs);
+  return visit(context->children.at(0));
 }
 
 std::any OrcaAstBuilder::visitMultiplicativeExpression(
     OrcaParser::MultiplicativeExpressionContext *context) {
   // Multiplicative expression
   if (context->rhs) {
-    OrcaAstExpressionNode *lhs = nullptr;
+    assert(context->children.size() == 3);
 
-    int i = 1;
-    for (auto &expr : context->castExpression()) {
-      std::any logicalAnd = visit(expr);
+    auto lhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->lhs));
+    auto rhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->rhs));
 
-      if (lhs == nullptr) {
-        lhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-        continue;
-      }
+    std::string op = context->children.at(1)->getText();
 
-      std::string op = context->children.at((i * 2) - 1)->getText();
-      auto rhs = std::any_cast<OrcaAstExpressionNode *>(logicalAnd);
-      lhs = new OrcaAstBinaryExpressionNode(expr, lhs, rhs, op);
-      ++i;
-    }
-
-    return std::any((OrcaAstExpressionNode *)lhs);
+    return std::any((OrcaAstExpressionNode *)new OrcaAstBinaryExpressionNode(
+        context, lhs, rhs, op));
   }
 
+  assert(context->children.size() == 1);
+
   // Fall through to cast expression
-  return visit(context->lhs);
+  return visit(context->children.at(0));
 }
 
 std::any OrcaAstBuilder::visitCastExpression(

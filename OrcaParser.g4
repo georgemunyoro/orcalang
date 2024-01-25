@@ -111,52 +111,48 @@ assignmentOperator:
 
 conditionalExpression:
 	logicalOrExpression
-	| condition = logicalOrExpression '?' thenExpr = expression ':' elseExpr = conditionalExpression;
+	| condition = logicalOrExpression '?' thenExpr = expression ':' elseExpr = conditionalExpression
+		;
 
 logicalOrExpression:
-	lhs = logicalAndExpression ('||' rhs = logicalAndExpression)*;
+	logicalAndExpression
+	| lhs = logicalAndExpression '||' rhs = logicalOrExpression;
 
 logicalAndExpression:
-	lhs = inclusiveOrExpression (
-		'&&' rhs = inclusiveOrExpression
-	)*;
+	lhs = inclusiveOrExpression
+	| lhs = inclusiveOrExpression '&&' rhs = logicalAndExpression;
 
 inclusiveOrExpression:
-	lhs = exclusiveOrExpression ('|' rhs = exclusiveOrExpression)*;
+	exclusiveOrExpression
+	| lhs = exclusiveOrExpression '|' rhs = inclusiveOrExpression;
 
 exclusiveOrExpression:
-	lhs = andExpression ('^' rhs = andExpression)*;
+	andExpression
+	| lhs = andExpression '^' rhs = exclusiveOrExpression;
 
 andExpression:
-	lhs = equalityExpression ('&' rhs = equalityExpression)*;
-
-equalityExpression:
-	lhs = relationalExpression (
-		('==' | '!=') rhs = relationalExpression
-	)*;
+	equalityExpression
+	| lhs = equalityExpression '&' rhs = andExpression;
 
 equalityExpression:
 	relationalExpression
-	| lhs = relationalExpression '==' rhs = relationalExpression
-	| lhs = relationalExpression '!=' rhs = relationalExpression;
+	| lhs = relationalExpression ('==' | '!=') rhs = equalityExpression;
 
 relationalExpression:
-	lhs = shiftExpression (
-		('<' | '>' | '<=' | '>=') rhs = shiftExpression
-	)*;
+	shiftExpression
+	| lhs = shiftExpression ('<' | '>' | '<=' | '>=') rhs = relationalExpression;
 
 shiftExpression:
-	lhs = additiveExpression (
-		('<<' | '>>') rhs = additiveExpression
-	)*;
+	additiveExpression
+	| lhs = additiveExpression ('>>' | '<<') rhs = shiftExpression;
 
 additiveExpression:
-	lhs = multiplicativeExpression (
-		('+' | '-') rhs = multiplicativeExpression
-	)*;
+	multiplicativeExpression
+	| lhs = multiplicativeExpression ('+' | '-') rhs = additiveExpression;
 
 multiplicativeExpression:
-	lhs = castExpression (('*' | '/' | '%') rhs = castExpression)*;
+	castExpression
+	| lhs = castExpression ('*' | '/' | '%') rhs = multiplicativeExpression;
 
 castExpression:
 	expr = castExpression 'as' typeToCastTo = type

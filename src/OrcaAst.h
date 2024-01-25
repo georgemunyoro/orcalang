@@ -49,7 +49,7 @@ public:
   OrcaParser::TypeContext *typeContext;
 
   void print(int indent) override {
-    printf("%*sTypeNode <%d\n", indent, "");
+    printf("%*sTypeNode\n", indent, "");
     printf("%*s%s\n", indent + 2, "", typeContext->getText().c_str());
   }
 };
