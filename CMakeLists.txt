@@ -93,6 +93,7 @@ add_executable(orca
               src/OrcaAstBuilder.cpp
               src/OrcaAst.cpp
               src/OrcaContext.cpp
+              src/OrcaTypeChecker.cpp
               ${ANTLR_OrcaLexer_CXX_OUTPUTS}
               ${ANTLR_OrcaParser_CXX_OUTPUTS}
 )

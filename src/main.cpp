@@ -14,4 +14,5 @@ int main(int argc, char *argv[]) {
   context.lex();
   context.parse();
   context.buildAst();
+  context.evaluateTypes();
 }

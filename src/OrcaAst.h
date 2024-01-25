@@ -6,6 +6,7 @@
 
 #include "./utils/printfColors.h"
 #include "OrcaParser.h"
+#include "OrcaType.h"
 
 using namespace orcagrammar;
 using namespace antlr4;
@@ -25,18 +26,30 @@ public:
   ParserRuleContext *parseContext;
 
   /**
+   * @brief The type of the node. This is set later by the type checker.
+   */
+  OrcaType *evaluatedType;
+
+  /**
    * @brief Returns a string representation of the context of this node (with
    * colors). e.g. [1:0 - 1:5] 'hello'
    *
    * @return std::string
    */
   std::string contextString() {
-    return std::string(KMAG) + "[" +
-           std::to_string(parseContext->start->getLine()) + ":" +
-           std::to_string(parseContext->start->getCharPositionInLine()) +
-           " - " + std::to_string(parseContext->stop->getLine()) + ":" +
-           std::to_string(parseContext->stop->getCharPositionInLine()) + "]" +
-           KNRM + " " + KBLU + "'" + parseContext->getText() + "'" + KNRM;
+    auto withoutType =
+        std::string(KMAG) + "[" +
+        std::to_string(parseContext->start->getLine()) + ":" +
+        std::to_string(parseContext->start->getCharPositionInLine()) + " - " +
+        std::to_string(parseContext->stop->getLine()) + ":" +
+        std::to_string(parseContext->stop->getCharPositionInLine()) + "]" +
+        KNRM + " " + KBLU + "'" + parseContext->getText() + "'" + KNRM;
+
+    if (evaluatedType) {
+      return withoutType + " " + KGRN + evaluatedType->toString() + KNRM;
+    } else {
+      return withoutType + " " + KRED + "???" + KNRM;
+    }
   }
 };
 
@@ -57,6 +70,7 @@ public:
   OrcaAstTypeNode(OrcaParser::TypeContext *typeContext)
       : typeContext(typeContext) {
     parseContext = typeContext;
+    evaluatedType = nullptr;
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
@@ -83,6 +97,7 @@ public:
                            OrcaAstTypeNode *type)
       : name(name), type(type) {
     this->parseContext = pContext;
+    evaluatedType = nullptr;
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
@@ -104,6 +119,7 @@ public:
                      std::vector<OrcaAstNode *> nodes)
       : nodes(nodes) {
     this->parseContext = pContext;
+    evaluatedType = nullptr;
   }
   ~OrcaAstProgramNode() = default;
 
@@ -128,6 +144,7 @@ public:
                               OrcaAstExpressionNode *rhs, std::string op)
       : lhs(lhs), rhs(rhs), op(op) {
     this->parseContext = pContext;
+    evaluatedType = nullptr;
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
@@ -160,6 +177,7 @@ public:
                              OrcaAstExpressionNode *expr, std::string op)
       : expr(expr), op(op) {
     this->parseContext = pContext;
+    evaluatedType = nullptr;
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
@@ -183,6 +201,7 @@ public:
                                    OrcaAstExpressionNode *elseExpr)
       : condition(condition), thenExpr(thenExpr), elseExpr(elseExpr) {
     this->parseContext = pContext;
+    evaluatedType = nullptr;
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
@@ -210,6 +229,7 @@ public:
                             std::vector<OrcaAstExpressionNode *> expressions)
       : expressions(expressions) {
     this->parseContext = pContext;
+    evaluatedType = nullptr;
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
@@ -235,15 +255,15 @@ public:
                              const std::string &name, OrcaAstTypeNode *type)
       : name(name), type(type) {
     this->parseContext = pContext;
+    evaluatedType = nullptr;
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
 
   void print(int indent) override {
-    printf("%*sTypeDeclarationNode %s\n", indent, "", contextString().c_str());
-    printf("%*sname: %s\n", indent + 2, "", name.c_str());
-    printf("%*stype:\n", indent + 2, "");
-    type->print(indent + 4);
+    printf("%*sTypeDeclarationNode %s%s%s %s\n", indent, "", KYEL, name.c_str(),
+           KNRM, contextString().c_str());
+    type->print(indent + 2);
   }
 
 private:
@@ -259,6 +279,7 @@ public:
                                      OrcaAstTypeNode *type)
       : params(params), name(name), type(type) {
     this->parseContext = pContext;
+    evaluatedType = nullptr;
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
@@ -287,6 +308,7 @@ public:
                                std::vector<OrcaAstNode *> nodes)
       : nodes(nodes) {
     this->parseContext = pContext;
+    evaluatedType = nullptr;
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
@@ -311,6 +333,7 @@ public:
                                  OrcaAstExpressionNode *expr)
       : expr(expr) {
     this->parseContext = pContext;
+    evaluatedType = nullptr;
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
@@ -333,6 +356,7 @@ public:
                                  OrcaAstCompoundStatementNode *body)
       : name(name), returnType(returnType), args(args), body(body) {
     this->parseContext = pContext;
+    evaluatedType = nullptr;
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
@@ -340,15 +364,14 @@ public:
   void print(int indent) override {
     printf("%*sFunctionDeclarationNode %s%s%s %s\n", indent, "", KYEL,
            name.c_str(), KNRM, contextString().c_str());
-    printf("%*sreturnType:\n", indent + 2, "");
-    returnType->print(indent + 4);
-    printf("%*sargs:\n", indent + 2, "");
     for (auto &arg : args) {
-      printf("%*s%s%s%s", indent + 4, "", KYEL, arg.first.c_str(), KNRM);
+      printf("%*s%s%s%s", indent + 2, "", KYEL, arg.first.c_str(), KNRM);
       arg.second->print(1);
     }
-    printf("%*sbody:\n", indent + 2, "");
-    body->print(indent + 4);
+    printf("%*s %s->%s ", indent + 2, "", KMAG, KNRM);
+    returnType->print(1);
+
+    body->print(indent + 2);
   }
 
 private:
@@ -365,6 +388,7 @@ public:
                            OrcaAstExpressionNode *expr)
       : keyword(keyword), expr(expr) {
     this->parseContext = pContext;
+    evaluatedType = nullptr;
   }
 
   OrcaAstJumpStatementNode(ParserRuleContext *pContext,
@@ -391,6 +415,7 @@ public:
                              OrcaAstExpressionNode *index)
       : expr(expr), index(index) {
     this->parseContext = pContext;
+    evaluatedType = nullptr;
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
@@ -421,6 +446,7 @@ public:
                                     OrcaAstMemberAccessKind kind)
       : expr(expr), member(member), kind(kind) {
     this->parseContext = pContext;
+    evaluatedType = nullptr;
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
@@ -447,6 +473,7 @@ public:
                                     std::vector<OrcaAstExpressionNode *> args)
       : expr(expr), args(args) {
     this->parseContext = pContext;
+    evaluatedType = nullptr;
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
@@ -474,6 +501,7 @@ public:
                                const std::string &op)
       : expr(expr), op(op) {
     this->parseContext = pContext;
+    evaluatedType = nullptr;
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
@@ -496,13 +524,14 @@ public:
   OrcaAstIntegerLiteralExpressionNode(ParserRuleContext *pContext, int value)
       : value(value) {
     this->parseContext = pContext;
+    evaluatedType = nullptr;
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
 
   void print(int indent) override {
-    printf("%*sIntegerLiteralExpressionNode %s%d%s\n", indent, "", KGRN, value,
-           KNRM);
+    printf("%*sIntegerLiteralExpressionNode %s%d%s %s\n", indent, "", KGRN,
+           value, KNRM, contextString().c_str());
   }
 
 private:
@@ -514,6 +543,7 @@ public:
   OrcaAstFloatLiteralExpressionNode(ParserRuleContext *pContext, float value)
       : value(value) {
     this->parseContext = pContext;
+    evaluatedType = nullptr;
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
@@ -534,6 +564,7 @@ public:
                                      const std::string &value)
       : value(value) {
     this->parseContext = pContext;
+    evaluatedType = nullptr;
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
@@ -553,6 +584,7 @@ public:
   OrcaAstBooleanLiteralExpressionNode(ParserRuleContext *pContext, bool value)
       : value(value) {
     this->parseContext = pContext;
+    evaluatedType = nullptr;
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
@@ -572,13 +604,14 @@ public:
                                   const std::string &name)
       : name(name) {
     this->parseContext = pContext;
+    evaluatedType = nullptr;
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
 
   void print(int indent) override {
-    printf("%*sIdentifierExpressionNode\n", indent, "");
-    printf("%*sname: %s\n", indent + 2, "", name.c_str());
+    printf("%*sIdentifierExpressionNode %s%s%s %s\n", indent, "", KYEL,
+           name.c_str(), KNRM, contextString().c_str());
   }
 
 private:

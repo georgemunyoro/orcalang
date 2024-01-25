@@ -150,6 +150,27 @@ public:
 
   OrcaTypeKind getKind() const { return kind; }
 
+  std::string toString() const {
+    switch (kind) {
+    case OrcaTypeKind::Integer:
+      return "integer";
+    case OrcaTypeKind::Float:
+      return "float";
+    case OrcaTypeKind::Pointer:
+      return "pointer";
+    case OrcaTypeKind::Array:
+      return "array";
+    case OrcaTypeKind::Boolean:
+      return "boolean";
+    case OrcaTypeKind::Char:
+      return "char";
+    case OrcaTypeKind::Struct:
+      return "struct";
+    case OrcaTypeKind::Void:
+      return "void";
+    }
+  }
+
 private:
   OrcaTypeKind kind;
 

@@ -9,6 +9,7 @@
 #include "OrcaLexer.h"
 #include "OrcaParser.h"
 #include "OrcaParserErrorListener.h"
+#include "OrcaTypeChecker.h"
 
 using namespace antlr4;
 using namespace orcagrammar;
@@ -40,6 +41,8 @@ public:
   // AST builder
   void buildAst();
 
+  void evaluateTypes();
+
 private:
   const std::string &getSourceCode() const { return source_code; }
   const std::string_view getSourceLine(size_t line) const;
@@ -58,11 +61,15 @@ private:
 
   ANTLRInputStream *inputStream;
   CommonTokenStream *tokenStream;
+
   OrcaLexer *lexer;
   OrcaParser *parser;
   OrcaAstBuilder *astBuilder;
+  OrcaTypeChecker *typeChecker;
 
   OrcaParser::ProgramContext *programContext;
+
+  OrcaAstProgramNode *ast;
 
   friend class OrcaLexerErrorListener;
   friend class OrcaParserErrorListener;

@@ -36,7 +36,15 @@ void OrcaContext::parse() {
 
 void OrcaContext::buildAst() {
   astBuilder = new OrcaAstBuilder(*this);
-  auto ast = astBuilder->build();
+  ast = astBuilder->build();
+  ast->print(0);
+}
+
+void OrcaContext::evaluateTypes() {
+  typeChecker = new OrcaTypeChecker();
+  typeChecker->run(ast);
+  printf("\n");
+  // typeChecker->printTypeMap();
   ast->print(0);
 }
 
