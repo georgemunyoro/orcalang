@@ -1,5 +1,6 @@
 
 #include "OrcaContext.h"
+#include "OrcaLexerErrorListener.h"
 
 using namespace antlr4;
 using namespace orcagrammar;
@@ -15,4 +16,5 @@ int main(int argc, char *argv[]) {
   context.parse();
   context.buildAst();
   context.evaluateTypes();
+  context.codegen();
 }

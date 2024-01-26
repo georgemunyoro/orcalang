@@ -1,3 +1,5 @@
+#pragma once
+
 #include "OrcaAst.h"
 
 class OrcaAstVisitor {

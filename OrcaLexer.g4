@@ -59,7 +59,6 @@ SHL: '<<';
 SHR: '>>';
 MOD: '%';
 DIV: '/';
-CALL: '()';
 DOLLAR: '$';
 
 // Types

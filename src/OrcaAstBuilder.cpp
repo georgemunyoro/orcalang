@@ -25,11 +25,10 @@ std::any OrcaAstBuilder::visitProgram(OrcaParser::ProgramContext *context) {
     }
   }
 
-  if (program->nodes.size() == 0) {
-    OrcaError(compileContext, "Program has no statements.",
-              context->getStart()->getLine(),
-              context->getStart()->getCharPositionInLine())
-        .print();
+  if (program->getNodes().size() == 0) {
+    throw OrcaError(compileContext, "Program has no statements.",
+                    context->getStart()->getLine(),
+                    context->getStart()->getCharPositionInLine());
   }
 
   return std::any(program);
@@ -99,10 +98,9 @@ std::any OrcaAstBuilder::visitUnaryExpression(
   auto expr = visit(context->expr);
 
   if (!expr.has_value()) {
-    OrcaError(compileContext, "Expected expression after unary operator.",
-              context->getStart()->getLine(),
-              context->getStart()->getCharPositionInLine())
-        .print();
+    throw OrcaError(compileContext, "Expected expression after unary operator.",
+                    context->getStart()->getLine(),
+                    context->getStart()->getCharPositionInLine());
   }
 
   OrcaAstUnaryExpressionNode *unaryNode = new OrcaAstUnaryExpressionNode(
@@ -444,21 +442,19 @@ std::any OrcaAstBuilder::visitPrimaryExpression(
 
   if (context->LPAREN()) {
     if (!context->RPAREN()) {
-      OrcaError(compileContext,
-                "Expected closing parenthesis after expression.",
-                context->getStart()->getLine(),
-                context->getStart()->getCharPositionInLine())
-          .print();
+      throw OrcaError(compileContext,
+                      "Expected closing parenthesis after expression.",
+                      context->getStart()->getLine(),
+                      context->getStart()->getCharPositionInLine());
     }
 
     return visit(context->expression());
   }
 
-  OrcaError(compileContext,
-            "Encountered unknown primary expression. This is a bug.",
-            context->getStart()->getLine(),
-            context->getStart()->getCharPositionInLine())
-      .print();
+  throw OrcaError(compileContext,
+                  "Encountered unknown primary expression. This is a bug.",
+                  context->getStart()->getLine(),
+                  context->getStart()->getCharPositionInLine());
 
   // unreachable
   exit(1);
@@ -552,10 +548,9 @@ std::any OrcaAstBuilder::visitCompoundStatement(
     auto node = visit(statement);
 
     if (!node.has_value()) {
-      OrcaError(compileContext, "Expected statement.",
-                context->getStart()->getLine(),
-                context->getStart()->getCharPositionInLine())
-          .print();
+      throw OrcaError(compileContext, "Expected statement.",
+                      context->getStart()->getLine(),
+                      context->getStart()->getCharPositionInLine());
     }
 
     nodes.push_back(std::any_cast<OrcaAstNode *>(node));

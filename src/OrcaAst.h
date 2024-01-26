@@ -1,6 +1,8 @@
 #pragma once
 
 #include <any>
+#include <cstdio>
+#include <format>
 #include <map>
 #include <string>
 
@@ -18,6 +20,7 @@ public:
   virtual ~OrcaAstNode() = default;
   virtual std::any accept(OrcaAstVisitor &visitor) = 0;
   virtual void print(int indent) = 0;
+  virtual std::string toString(int indent) { return ""; }
 
   /**
    * @brief The ANTLR context of the node in the source code. Used for error
@@ -36,14 +39,21 @@ public:
    *
    * @return std::string
    */
-  std::string contextString() {
+  std::string contextString() { return contextString(true); }
+
+  std::string contextString(bool showSource) {
     auto withoutType =
         std::string(KMAG) + "[" +
         std::to_string(parseContext->start->getLine()) + ":" +
         std::to_string(parseContext->start->getCharPositionInLine()) + " - " +
         std::to_string(parseContext->stop->getLine()) + ":" +
         std::to_string(parseContext->stop->getCharPositionInLine()) + "]" +
-        KNRM + " " + KBLU + "'" + parseContext->getText() + "'" + KNRM;
+        KNRM;
+
+    if (showSource) {
+      withoutType +=
+          std::string(" ") + KBLU + "'" + parseContext->getText() + "'" + KNRM;
+    }
 
     if (evaluatedType) {
       return withoutType + " " + KGRN + evaluatedType->toString() + KNRM;
@@ -83,6 +93,10 @@ public:
   void print(int indent) override {
     printf("%*sTypeNode %s\n", indent, "", contextString().c_str());
   }
+
+  std::string toString(int indent) override {
+    return std::string(indent, ' ') + "TypeNode " + contextString() + "\n";
+  }
 };
 
 /**
@@ -108,9 +122,16 @@ public:
     type->print(indent + 2);
   }
 
+  std::string toString(int indent) override {
+    return std::string(indent, ' ') + "LetExpressionNode " + KYEL + name +
+           KNRM + " " + contextString() + "\n" + type->toString(indent + 2);
+  }
+
 private:
   std::string name;
   OrcaAstTypeNode *type;
+
+  friend class OrcaTypeChecker;
 };
 
 class OrcaAstProgramNode : public OrcaAstNode {
@@ -128,12 +149,25 @@ public:
   void addNode(OrcaAstNode *node) { nodes.push_back(node); }
 
   void print(int indent) override {
-    printf("%*sProgramNode %s\n", indent, "", contextString().c_str());
+    printf("%*sProgramNode %s\n", indent, "", contextString(false).c_str());
     for (auto &node : nodes) {
       node->print(indent + 2);
     }
   }
 
+  std::vector<OrcaAstNode *> getNodes() const { return nodes; }
+
+  std::string toString(int indent) override {
+    std::string result =
+        std::string(indent, ' ') + "ProgramNode " + contextString(false) + "\n";
+
+    for (auto &node : nodes)
+      result += node->toString(indent + 2);
+
+    return result;
+  }
+
+private:
   std::vector<OrcaAstNode *> nodes;
 };
 
@@ -150,15 +184,24 @@ public:
   std::any accept(OrcaAstVisitor &visitor) override;
 
   void print(int indent) override {
-    printf("%*sBinaryExpressionNode %s\n", indent, "", contextString().c_str());
+    printf("%*sBinaryExpressionNode %s%s%s %s\n", indent, "", KYEL, op.c_str(),
+           KNRM, contextString().c_str());
     lhs->print(indent + 4);
     rhs->print(indent + 4);
+  }
+
+  std::string toString(int indent) override {
+    return std::string(indent, ' ') + "BinaryExpressionNode " + KYEL + op +
+           KNRM + " " + contextString() + "\n" + lhs->toString(indent + 2) +
+           rhs->toString(indent + 2);
   }
 
 private:
   OrcaAstExpressionNode *lhs;
   OrcaAstExpressionNode *rhs;
   std::string op;
+
+  friend class OrcaTypeChecker;
 };
 
 class OrcaAstAssignmentExpressionNode : public OrcaAstBinaryExpressionNode {
@@ -315,16 +358,30 @@ public:
 
   void addNode(OrcaAstNode *node) { nodes.push_back(node); }
 
+  std::vector<OrcaAstNode *> getNodes() const { return nodes; }
+
   void print(int indent) override {
     printf("%*sCompoundStatementNode %s\n", indent, "",
-           contextString().c_str());
+           contextString(false).c_str());
     for (auto &node : nodes) {
       node->print(indent + 2);
     }
   }
 
+  std::string toString(int indent) override {
+    std::string result = std::string(indent, ' ') + "CompoundStatementNode " +
+                         contextString(false) + "\n";
+
+    for (auto &node : nodes)
+      result += node->toString(indent + 2);
+
+    return result;
+  }
+
 private:
   std::vector<OrcaAstNode *> nodes;
+
+  friend class OrcaTypeChecker;
 };
 
 class OrcaAstExpressionStatementNode : public OrcaAstStatementNode {
@@ -345,6 +402,11 @@ public:
            contextString().c_str());
     expr->print(indent + 4);
   }
+
+  std::string toString(int indent) override {
+    return std::string(indent, ' ') + "ExpressionStatementNode " +
+           contextString() + "\n" + expr->toString(indent + 2);
+  }
 };
 
 class OrcaAstFunctionDeclarationNode : public OrcaAstStatementNode {
@@ -363,7 +425,7 @@ public:
 
   void print(int indent) override {
     printf("%*sFunctionDeclarationNode %s%s%s %s\n", indent, "", KYEL,
-           name.c_str(), KNRM, contextString().c_str());
+           name.c_str(), KNRM, contextString(false).c_str());
     for (auto &arg : args) {
       printf("%*s%s%s%s", indent + 2, "", KYEL, arg.first.c_str(), KNRM);
       arg.second->print(1);
@@ -374,11 +436,37 @@ public:
     body->print(indent + 2);
   }
 
+  std::string toString(int indent) override {
+    std::string result = std::string(indent, ' ') + "FunctionDeclarationNode " +
+                         KYEL + name + KNRM + " " + contextString(false) + "\n";
+
+    for (auto &arg : args) {
+      result += std::string(indent + 2, ' ') + KYEL + arg.first + KNRM;
+      result += arg.second->toString(1);
+    }
+
+    result += std::string(indent + 2, ' ') + KMAG + " -> " + KNRM;
+    result += returnType->toString(1);
+
+    result += body->toString(indent + 2);
+    return result;
+  }
+
+  std::string getName() const { return name; }
+
+  std::map<std::string, OrcaAstTypeNode *> getParameters() const {
+    return args;
+  }
+
+  OrcaAstCompoundStatementNode *getBody() const { return body; }
+
 private:
   std::string name;
   OrcaAstTypeNode *returnType;
   std::map<std::string, OrcaAstTypeNode *> args;
   OrcaAstCompoundStatementNode *body;
+
+  friend class OrcaTypeChecker;
 };
 
 class OrcaAstJumpStatementNode : public OrcaAstStatementNode {
@@ -403,9 +491,24 @@ public:
     expr->print(indent + 2);
   }
 
+  std::string getKeyword() const { return keyword; }
+  OrcaAstExpressionNode *getExpr() const { return expr; }
+
+  std::string toString(int indent) override {
+    std::string result = std::string(indent, ' ') + "JumpStatementNode " +
+                         KYEL + keyword + KNRM + " " + contextString() + "\n";
+
+    if (expr)
+      result += expr->toString(indent + 2);
+
+    return result;
+  }
+
 private:
   std::string keyword;
   OrcaAstExpressionNode *expr;
+
+  friend class OrcaTypeChecker;
 };
 
 class OrcaAstIndexExpressionNode : public OrcaAstExpressionNode {
@@ -531,8 +634,15 @@ public:
 
   void print(int indent) override {
     printf("%*sIntegerLiteralExpressionNode %s%d%s %s\n", indent, "", KGRN,
-           value, KNRM, contextString().c_str());
+           value, KNRM, contextString(false).c_str());
   }
+
+  std::string toString(int indent) override {
+    return std::string(indent, ' ') + "IntegerLiteralExpressionNode " + KGRN +
+           std::to_string(value) + KNRM + " " + contextString(false) + "\n";
+  }
+
+  int getValue() const { return value; }
 
 private:
   int value;
@@ -590,8 +700,13 @@ public:
   std::any accept(OrcaAstVisitor &visitor) override;
 
   void print(int indent) override {
-    printf("%*sBooleanLiteralExpressionNode\n", indent, "");
-    printf("%*svalue: %s\n", indent + 2, "", value ? "true" : "false");
+    printf("%*sBooleanLiteralExpressionNode %s%s%s\n", indent, "", KGRN,
+           value ? "true" : "false", KNRM);
+  }
+
+  std::string toString(int indent) override {
+    return std::string(indent, ' ') + "BooleanLiteralExpressionNode " + KGRN +
+           (value ? "true" : "false") + KNRM + "\n";
   }
 
 private:
@@ -613,6 +728,8 @@ public:
     printf("%*sIdentifierExpressionNode %s%s%s %s\n", indent, "", KYEL,
            name.c_str(), KNRM, contextString().c_str());
   }
+
+  std::string getName() { return name; }
 
 private:
   std::string name;

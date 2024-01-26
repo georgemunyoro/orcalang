@@ -26,11 +26,11 @@ typeDeclaration:
 identifierList: Identifier (',' Identifier)*;
 
 functionDeclarationStatement:
-	'func' name = Identifier ('(' args = functionArgs ')' | '()') '->' returnType = type body =
+	'func' name = Identifier ('(' args = functionArgs ')' | '('')') '->' returnType = type body =
 		compoundStatement
 	| 'func' name = Identifier '<' typeParams = identifierList '>' (
 		'(' args = functionArgs ')'
-		| '()'
+		| '('')'
 	) '->' returnType = type body = compoundStatement;
 
 functionArgs: functionArg (',' functionArg)*;
@@ -65,7 +65,8 @@ type:
 	| elementType = type '[' arraySize = Integer ']'
 	| '{' fields = structFieldDeclarationList methods = functionDeclarationStatement* '}'
 	| opaqueType = type '<' params = typeList '>'
-	| '$' nameOfFunctionToGetReturnTypeOf = Identifier;
+	| '$' nameOfFunctionToGetReturnTypeOf = Identifier
+	| '(' argsType = typeList ')' '->' returnType = type;
 
 structFieldDeclarationList: structFieldDeclaration*;
 structFieldDeclaration:
@@ -85,8 +86,7 @@ typeSpecifier:
 	| T_BOOL
 	| T_VOID
 	| T_CHAR
-	| Identifier
-	| '(' argsType = typeList ')' '->' returnType = type;
+	| Identifier;
 
 typeList: type (',' type)*;
 
@@ -176,7 +176,7 @@ postfixExpression:
 		| '.' field = Identifier
 		| '->' field = Identifier
 		| '(' args = argumentExpressionList ')'
-		| '()'
+		| '('')'
 		| '++'
 		| '--'
 	)*;

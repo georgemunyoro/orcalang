@@ -1,8 +1,10 @@
 #include <fstream>
+#include <iostream>
 #include <string>
-#include <string_view>
 
+#include "OrcaCodeGen.h"
 #include "OrcaContext.h"
+#include "OrcaLexerErrorListener.h"
 #include "OrcaParser.h"
 
 std::ifstream OrcaContext::openFile(const std::string &filepath) {
@@ -37,15 +39,25 @@ void OrcaContext::parse() {
 void OrcaContext::buildAst() {
   astBuilder = new OrcaAstBuilder(*this);
   ast = astBuilder->build();
-  ast->print(0);
+  // printf("\n");
+  // ast->print(0);
+  // printf("\n");
+
+  // std::cout << "AST built successfully" << std::endl;
+  // std::cout << ast->toString(0) << std::endl;
 }
 
 void OrcaContext::evaluateTypes() {
-  typeChecker = new OrcaTypeChecker();
+  typeChecker = new OrcaTypeChecker(*this);
   typeChecker->run(ast);
-  printf("\n");
-  // typeChecker->printTypeMap();
-  ast->print(0);
+  // printf("\n");
+  // ast->print(0);
+  // printf("\n");
+}
+
+void OrcaContext::codegen() {
+  codeGenerator = new OrcaCodeGen(*this);
+  codeGenerator->generateCode(ast);
 }
 
 void OrcaContext::readSourceCode() {
@@ -55,24 +67,21 @@ void OrcaContext::readSourceCode() {
   }
 }
 
-const std::string_view OrcaContext::getSourceLine(size_t line) const {
-  size_t lineStart = 0;
-  size_t currentLine = 1;
+std::vector<std::string> split(std::string s, std::string delimiter) {
+  size_t pos_start = 0, pos_end, delim_len = delimiter.length();
+  std::string token;
+  std::vector<std::string> res;
 
-  while (currentLine < line && lineStart < source_code.length()) {
-    lineStart = source_code.find('\n', lineStart) + 1;
-    if (lineStart == std::string::npos) {
-      // Line number out of range
-      return std::string_view();
-    }
-    ++currentLine;
+  while ((pos_end = s.find(delimiter, pos_start)) != std::string::npos) {
+    token = s.substr(pos_start, pos_end - pos_start);
+    pos_start = pos_end + delim_len;
+    res.push_back(token);
   }
 
-  // Find the end of the line
-  size_t lineEnd = source_code.find('\n', lineStart);
-  if (lineEnd == std::string::npos) {
-    lineEnd = source_code.length();
-  }
+  res.push_back(s.substr(pos_start));
+  return res;
+}
 
-  return std::string_view(source_code).substr(lineStart, lineEnd - lineStart);
+const std::string OrcaContext::getSourceLine(size_t line) const {
+  return split(source_code, "\n")[line - 1];
 }

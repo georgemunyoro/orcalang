@@ -1,11 +1,12 @@
 
+#include "OrcaAst.h"
 #include "OrcaLexerErrorListener.h"
 #include <ANTLRInputStream.h>
 #include <CommonTokenStream.h>
 #include <fstream>
-#include <string_view>
 
 #include "OrcaAstBuilder.h"
+#include "OrcaCodeGen.h"
 #include "OrcaLexer.h"
 #include "OrcaParser.h"
 #include "OrcaParserErrorListener.h"
@@ -43,9 +44,13 @@ public:
 
   void evaluateTypes();
 
+  void codegen();
+
+  OrcaAstProgramNode *getAst() const { return ast; }
+
 private:
   const std::string &getSourceCode() const { return source_code; }
-  const std::string_view getSourceLine(size_t line) const;
+  const std::string getSourceLine(size_t line) const;
   const std::string &getEntryFilepath() const { return entryFilepath; }
 
   static std::ifstream openFile(const std::string &filepath);
@@ -66,6 +71,7 @@ private:
   OrcaParser *parser;
   OrcaAstBuilder *astBuilder;
   OrcaTypeChecker *typeChecker;
+  OrcaCodeGen *codeGenerator;
 
   OrcaParser::ProgramContext *programContext;
 

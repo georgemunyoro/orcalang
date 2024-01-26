@@ -3,3 +3,6 @@ examples/
 venv/
 .antlr/
 .cache/
+.zed/
+.DS_Store
+Testing/

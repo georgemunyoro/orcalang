@@ -1,38 +1,21 @@
-# cmake_minimum_required(VERSION 3.20.0)
-# project(orcalang)
-
-# find_package(LLVM REQUIRED CONFIG)
-
-# message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
-# message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
-
-# set(CMAKE_CXX_STANDARD 20)
-# set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-# include_directories(${LLVM_INCLUDE_DIRS})
-# separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
-# add_definitions(${LLVM_DEFINITIONS_LIST})
-
-# # Build source
-# add_executable(orca src/main.cpp)
-
-# # Find the libraries that correspond to the LLVM components
-# llvm_map_components_to_libnames(llvm_libs support core irreader)
-
-# # Link against LLVM libraries
-# target_link_libraries(orca ${llvm_libs})
-
-# ---------------------------------------------------------------
-
 # minimum required CMAKE version
 CMAKE_MINIMUM_REQUIRED(VERSION 3.7 FATAL_ERROR)
 
 project(orcalang)
 
+find_package(LLVM REQUIRED CONFIG)
+
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+
+include_directories(${LLVM_INCLUDE_DIRS})
+separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
+add_definitions(${LLVM_DEFINITIONS_LIST})
+
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # compiler must be 17
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # add googletest
@@ -85,7 +68,7 @@ include_directories(${ANTLR_OrcaLexer_OUTPUT_DIR})
 include_directories(${ANTLR_OrcaParser_OUTPUT_DIR})
 
 # add generated grammar to demo binary target
-add_executable(orca 
+add_executable(orca
               src/main.cpp
               src/OrcaLexerErrorListener.cpp
               src/OrcaParserErrorListener.cpp
@@ -94,19 +77,40 @@ add_executable(orca
               src/OrcaAst.cpp
               src/OrcaContext.cpp
               src/OrcaTypeChecker.cpp
+              src/OrcaScope.cpp
+              src/OrcaCodeGen.cpp
               ${ANTLR_OrcaLexer_CXX_OUTPUTS}
               ${ANTLR_OrcaParser_CXX_OUTPUTS}
 )
+
+llvm_map_components_to_libnames(llvm_libs support core irreader)
+
 target_link_libraries(orca antlr4_static)
+target_link_libraries(orca ${llvm_libs})
 
 enable_testing()
 
-add_executable(orca_test test/orca_test.cpp
+add_executable(orca_test
+
+              src/OrcaLexerErrorListener.cpp
+              src/OrcaParserErrorListener.cpp
+              src/OrcaError.cpp
+              src/OrcaAstBuilder.cpp
+              src/OrcaAst.cpp
+              src/OrcaContext.cpp
+              src/OrcaTypeChecker.cpp
+              src/OrcaScope.cpp
+              src/OrcaCodeGen.cpp
+
+              test/stage1.cpp
+              test/main.cpp
+
                ${ANTLR_OrcaLexer_CXX_OUTPUTS}
                ${ANTLR_OrcaParser_CXX_OUTPUTS})
 
 target_link_libraries(orca_test GTest::gtest_main)
 target_link_libraries(orca_test antlr4_static)
+target_link_libraries(orca_test ${llvm_libs})
 
 include(GoogleTest)
 gtest_discover_tests(orca_test)

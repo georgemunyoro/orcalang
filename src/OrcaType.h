@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <string>
 #include <vector>
 
 class OrcaType;
@@ -13,7 +14,8 @@ enum class OrcaTypeKind {
   Boolean,
   Char,
   Struct,
-  Void
+  Void,
+  Function,
 };
 
 class OrcaIntegerType {
@@ -21,6 +23,14 @@ public:
   OrcaIntegerType(bool isSigned, int bits) : isSigned(isSigned), bits(bits) {}
 
   OrcaTypeKind getKind() const { return OrcaTypeKind::Integer; }
+
+  std::string toString() const {
+    return (isSigned ? std::string("s") : std::string("u")) +
+           std::to_string(bits);
+  }
+
+  int getBits() const { return bits; }
+  bool getIsSigned() const { return isSigned; }
 
 private:
   bool isSigned;
@@ -101,6 +111,31 @@ public:
   OrcaTypeKind getKind() const { return OrcaTypeKind::Void; }
 };
 
+class OrcaFunctionType {
+public:
+  OrcaFunctionType(OrcaType *returnType,
+                   std::vector<std::pair<std::string, OrcaType *>> parameters)
+      : returnType(returnType), parameters(parameters) {}
+
+  OrcaTypeKind getKind() const { return OrcaTypeKind::Function; }
+
+  OrcaType *getReturnType() const { return returnType; }
+
+  std::vector<OrcaType *> getParameterTypes() const {
+    std::vector<OrcaType *> parameterTypes;
+    for (auto &parameter : parameters) {
+      parameterTypes.push_back(parameter.second);
+    }
+    return parameterTypes;
+  }
+
+private:
+  OrcaType *returnType;
+  std::vector<std::pair<std::string, OrcaType *>> parameters;
+
+  friend class OrcaType;
+};
+
 class OrcaType {
 public:
   OrcaType() {}
@@ -130,6 +165,9 @@ public:
   OrcaType(OrcaVoidType voidType)
       : voidType(voidType), kind(OrcaTypeKind::Void) {}
 
+  OrcaType(OrcaFunctionType functionType)
+      : functionType(functionType), kind(OrcaTypeKind::Function) {}
+
   static OrcaType Void() { return OrcaType(OrcaVoidType()); }
   static OrcaType Boolean() { return OrcaType(OrcaBooleanType()); }
   static OrcaType Char() { return OrcaType(OrcaCharType()); }
@@ -150,24 +188,147 @@ public:
 
   OrcaTypeKind getKind() const { return kind; }
 
+  size_t sizeOf() const {
+    switch (kind) {
+    case OrcaTypeKind::Integer:
+      return integerType.bits / 8;
+    case OrcaTypeKind::Float:
+      return floatType.bits / 8;
+    case OrcaTypeKind::Pointer:
+      return 8; // For now, assume an address size of 64-bit
+    case OrcaTypeKind::Array:
+      return arrayType.elementType->sizeOf() * arrayType.length;
+    case OrcaTypeKind::Boolean:
+      return 1;
+    case OrcaTypeKind::Char:
+      return 1;
+    case OrcaTypeKind::Struct: {
+      size_t s_size = 0;
+      for (auto f : structType.fields)
+        s_size += f.second->sizeOf();
+
+      return s_size;
+    }
+    case OrcaTypeKind::Void:
+      return 0;
+    case OrcaTypeKind::Function:
+      return 0;
+    }
+  }
+
   std::string toString() const {
     switch (kind) {
     case OrcaTypeKind::Integer:
-      return "integer";
+      return this->integerType.toString();
     case OrcaTypeKind::Float:
       return "float";
     case OrcaTypeKind::Pointer:
-      return "pointer";
+      return pointerType.pointee->toString() + "*";
     case OrcaTypeKind::Array:
-      return "array";
+      return arrayType.elementType->toString() + "[" +
+             std::to_string(arrayType.length) + "]";
     case OrcaTypeKind::Boolean:
-      return "boolean";
+      return "bool";
     case OrcaTypeKind::Char:
       return "char";
     case OrcaTypeKind::Struct:
       return "struct";
     case OrcaTypeKind::Void:
       return "void";
+    case OrcaTypeKind::Function: {
+      std::string paramsStr = "(";
+      for (size_t i = 0; i < functionType.parameters.size(); ++i) {
+        paramsStr += functionType.parameters.at(i).second->toString();
+        if (i != functionType.parameters.size() - 1) {
+          paramsStr += ", ";
+        }
+      }
+      return paramsStr + ") -> " + functionType.returnType->toString();
+    }
+    }
+  }
+
+  OrcaFunctionType getFunctionType() const {
+    if (kind == OrcaTypeKind::Function) {
+      return functionType;
+    } else {
+      throw std::runtime_error("Type is not a function type.");
+    }
+  }
+
+  OrcaIntegerType getIntegerType() const {
+    if (kind == OrcaTypeKind::Integer) {
+      return integerType;
+    } else {
+      throw std::runtime_error("Type is not an integer type.");
+    }
+  }
+
+  bool isEqual(OrcaType *other) {
+    if (kind != other->kind) {
+      return false;
+    }
+
+    switch (kind) {
+    case OrcaTypeKind::Integer:
+      return integerType.isSigned == other->integerType.isSigned &&
+             integerType.bits == other->integerType.bits;
+    case OrcaTypeKind::Float:
+      return floatType.bits == other->floatType.bits;
+    case OrcaTypeKind::Pointer:
+      return pointerType.pointee->isEqual(other->pointerType.pointee);
+    case OrcaTypeKind::Array:
+      return arrayType.elementType->isEqual(other->arrayType.elementType) &&
+             arrayType.length == other->arrayType.length;
+    case OrcaTypeKind::Boolean:
+      return true;
+    case OrcaTypeKind::Char:
+      return true;
+    case OrcaTypeKind::Struct: {
+      if (structType.fields.size() != other->structType.fields.size()) {
+        return false;
+      }
+
+      for (size_t i = 0; i < structType.fields.size(); ++i) {
+        if (structType.fields.at(i).first !=
+            other->structType.fields.at(i).first) {
+          return false;
+        }
+
+        if (!structType.fields.at(i).second->isEqual(
+                other->structType.fields.at(i).second)) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+    case OrcaTypeKind::Void:
+      return true;
+    case OrcaTypeKind::Function: {
+      if (!functionType.returnType->isEqual(other->functionType.returnType)) {
+        return false;
+      }
+
+      if (functionType.parameters.size() !=
+          other->functionType.parameters.size()) {
+        return false;
+      }
+
+      for (size_t i = 0; i < functionType.parameters.size(); ++i) {
+        if (functionType.parameters.at(i).first !=
+            other->functionType.parameters.at(i).first) {
+          return false;
+        }
+
+        if (!functionType.parameters.at(i).second->isEqual(
+                other->functionType.parameters.at(i).second)) {
+          return false;
+        }
+      }
+
+      return true;
+    }
     }
   }
 
@@ -183,5 +344,6 @@ private:
     OrcaCharType charType;
     OrcaStructType structType;
     OrcaVoidType voidType;
+    OrcaFunctionType functionType;
   };
 };

@@ -8,6 +8,6 @@ void OrcaError::print() const {
   printf("--> %s [%zu:%zu]\n", context.getEntryFilepath().c_str(), line,
          charPositionInLine);
   printf("     | \n");
-  printf(" %3d | %s", (int)line, context.getSourceLine(line).data());
+  printf(" %3d | %s\n", (int)line, context.getSourceLine(line).c_str());
   printf("     | %*s\n\n", (int)charPositionInLine + 1, "^");
 }
