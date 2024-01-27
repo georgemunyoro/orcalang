@@ -33,7 +33,7 @@ class OrcaTypeChecker : OrcaAstVisitor {
     OrcaType *lhs = std::any_cast<OrcaType *>(node->lhs->accept(*this));
     OrcaType *rhs = std::any_cast<OrcaType *>(node->rhs->accept(*this));
 
-    if (node->op == "=") {
+    if (node->opSymbol == "=") {
 
       // Cannot assign to type 'void'
       if (lhs->getKind() == OrcaTypeKind::Void) {
@@ -93,7 +93,7 @@ class OrcaTypeChecker : OrcaAstVisitor {
 
     // Unreachable
     throw OrcaError(compileContext,
-                    "Unhandled assignment operator '" + node->op +
+                    "Unhandled assignment operator '" + node->opSymbol +
                         "'. This is a bug.",
                     node->parseContext->getStart()->getLine(),
                     node->parseContext->getStart()->getCharPositionInLine());
@@ -105,7 +105,17 @@ class OrcaTypeChecker : OrcaAstVisitor {
   };
 
   std::any visitUnaryExpression(OrcaAstUnaryExpressionNode *node) override {
-    throw "TODO";
+    OrcaType *operandType =
+        std::any_cast<OrcaType *>(node->getExpr()->accept(*this));
+
+    try {
+      node->evaluatedType = node->getOperator()->getResultingType(operandType);
+      return std::any(node->evaluatedType);
+    } catch (std::string &e) {
+      throw OrcaError(compileContext, e,
+                      node->parseContext->getStart()->getLine(),
+                      node->parseContext->getStart()->getCharPositionInLine());
+    }
   };
 
   std::any visitExpressionList(OrcaAstExpressionListNode *node) override {
@@ -167,7 +177,7 @@ class OrcaTypeChecker : OrcaAstVisitor {
     node->returnType->evaluatedType = returnType;
 
     // Add the function to the current scope
-    typeScope->set(node->name, functionType);
+    typeScope->set(node->name, new OrcaType(OrcaPointerType(functionType)));
 
     currentFunctionInfo = {
         .declaration = node,
@@ -233,62 +243,14 @@ class OrcaTypeChecker : OrcaAstVisitor {
     OrcaType *lhs = std::any_cast<OrcaType *>(node->lhs->accept(*this));
     OrcaType *rhs = std::any_cast<OrcaType *>(node->rhs->accept(*this));
 
-    if (node->op == "+") {
-      // Cannot add void types
-      if (lhs->getKind() == OrcaTypeKind::Void ||
-          rhs->getKind() == OrcaTypeKind::Void) {
-        throw OrcaError(
-            compileContext,
-            "Cannot assign to lvalue of type '" + lhs->toString() + "'.",
-            node->parseContext->getStart()->getLine(),
-            node->parseContext->getStart()->getCharPositionInLine());
-      }
-
-      if (lhs->getKind() == OrcaTypeKind::Integer) {
-
-        switch (rhs->getKind()) {
-
-        case OrcaTypeKind::Integer:
-        case OrcaTypeKind::Boolean:
-        case OrcaTypeKind::Float:
-        case OrcaTypeKind::Pointer:
-        case OrcaTypeKind::Char: {
-
-          // If attempting to add compatible types of a different size,
-          // require an explicit cast.
-          if (lhs->sizeOf() != rhs->sizeOf()) {
-            throw OrcaError(
-                compileContext,
-                "Cannot add value of type '" + rhs->toString() + "' to type '" +
-                    lhs->toString() +
-                    "'. If this is "
-                    "intentional, you must explicitly cast the value.",
-                node->parseContext->getStart()->getLine(),
-                node->parseContext->getStart()->getCharPositionInLine());
-          }
-
-          // Everything is fine, the type of rhs can be added to type rhs
-          node->evaluatedType = lhs;
-          return std::any(node->evaluatedType);
-        }
-
-        default: {
-          throw OrcaError(
-              compileContext,
-              "Cannot add value of type '" + rhs->toString() + "' to type '" +
-                  lhs->toString() + "'.",
-              node->parseContext->getStart()->getLine(),
-              node->parseContext->getStart()->getCharPositionInLine());
-        }
-        }
-      }
+    try {
+      node->evaluatedType = node->getOperator()->getResultingType(lhs, rhs);
+      return std::any(node->evaluatedType);
+    } catch (std::string &e) {
+      throw OrcaError(compileContext, e,
+                      node->parseContext->getStart()->getLine(),
+                      node->parseContext->getStart()->getCharPositionInLine());
     }
-
-    // Unreachable
-    throw OrcaError(compileContext,
-                    "Unknown binary expression operator '" + node->op + "'",
-                    node->parseContext->getStart()->getLine(),
-                    node->parseContext->getStart()->getCharPositionInLine());
   };
 
   std::any

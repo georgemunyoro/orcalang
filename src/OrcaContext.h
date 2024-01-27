@@ -48,8 +48,9 @@ public:
 
   OrcaAstProgramNode *getAst() const { return ast; }
 
-private:
   const std::string &getSourceCode() const { return source_code; }
+
+private:
   const std::string getSourceLine(size_t line) const;
   const std::string &getEntryFilepath() const { return entryFilepath; }
 

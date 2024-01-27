@@ -1,6 +1,7 @@
 #include <any>
 #include <cassert>
 #include <cstdio>
+#include <iostream>
 #include <string>
 
 #include "OrcaAst.h"
@@ -154,10 +155,10 @@ std::any OrcaAstBuilder::visitLogicalOrExpression(
     auto lhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->lhs));
     auto rhs = std::any_cast<OrcaAstExpressionNode *>(visit(context->rhs));
 
-    std::string op = context->children.at(1)->getText();
+    std::string opSymbol = context->children.at(1)->getText();
 
     return std::any((OrcaAstExpressionNode *)new OrcaAstBinaryExpressionNode(
-        context, lhs, rhs, op));
+        context, lhs, rhs, opSymbol));
   }
 
   assert(context->children.size() == 1);

@@ -1,12 +1,13 @@
 #pragma once
 
+#include <ParserRuleContext.h>
 #include <any>
 #include <cstdio>
-#include <format>
 #include <map>
 #include <string>
 
 #include "./utils/printfColors.h"
+#include "OrcaOperator.h"
 #include "OrcaParser.h"
 #include "OrcaType.h"
 
@@ -21,6 +22,8 @@ public:
   virtual std::any accept(OrcaAstVisitor &visitor) = 0;
   virtual void print(int indent) = 0;
   virtual std::string toString(int indent) { return ""; }
+
+  ParserRuleContext *getParseContext() { return parseContext; }
 
   /**
    * @brief The ANTLR context of the node in the source code. Used for error
@@ -175,31 +178,70 @@ class OrcaAstBinaryExpressionNode : public OrcaAstExpressionNode {
 public:
   OrcaAstBinaryExpressionNode(ParserRuleContext *pContext,
                               OrcaAstExpressionNode *lhs,
-                              OrcaAstExpressionNode *rhs, std::string op)
-      : lhs(lhs), rhs(rhs), op(op) {
+                              OrcaAstExpressionNode *rhs, std::string opSymbol)
+      : lhs(lhs), rhs(rhs), opSymbol(opSymbol) {
     this->parseContext = pContext;
     evaluatedType = nullptr;
+
+    if (opSymbol == "+")
+      op = OrcaAdditionOperator::getInstance();
+    else if (opSymbol == "-")
+      op = OrcaSubtractionOperator::getInstance();
+
+    // } else if (op == "*") {
+    //   op = OrcaBinaryOperator::Multiply;
+    // } else if (op == "/") {
+    //   op = OrcaBinaryOperator::Divide;
+    // } else if (op == "%") {
+    //   op = OrcaBinaryOperator::Modulo;
+    // } else if (op == "==") {
+    //   op = OrcaBinaryOperator::Equals;
+    // } else if (op == "!=") {
+    //   op = OrcaBinaryOperator::NotEquals;
+    // } else if (op == ">") {
+    //   op = OrcaBinaryOperator::GreaterThan;
+    // } else if (op == ">=") {
+    //   op = OrcaBinaryOperator::GreaterThanOrEqual;
+    // } else if (op == "<") {
+    //   op = OrcaBinaryOperator::LessThan;
+    // } else if (op == "<=") {
+    //   op = OrcaBinaryOperator::LessThanOrEqual;
+    // } else if (op == "&&") {
+    //   op = OrcaBinaryOperator::And;
+    // } else if (op == "||") {
+    //   op = OrcaBinaryOperator::Or;
+    // }
+
+    else {
+      throw std::runtime_error("Unknown binary operator: " + opSymbol);
+    }
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
 
   void print(int indent) override {
-    printf("%*sBinaryExpressionNode %s%s%s %s\n", indent, "", KYEL, op.c_str(),
-           KNRM, contextString().c_str());
+    printf("%*sBinaryExpressionNode %s%s%s %s\n", indent, "", KYEL,
+           opSymbol.c_str(), KNRM, contextString().c_str());
     lhs->print(indent + 4);
     rhs->print(indent + 4);
   }
 
   std::string toString(int indent) override {
-    return std::string(indent, ' ') + "BinaryExpressionNode " + KYEL + op +
-           KNRM + " " + contextString() + "\n" + lhs->toString(indent + 2) +
-           rhs->toString(indent + 2);
+    return std::string(indent, ' ') + "BinaryExpressionNode " + KYEL +
+           opSymbol + KNRM + " " + contextString() + "\n" +
+           lhs->toString(indent + 2) + rhs->toString(indent + 2);
   }
+
+  OrcaBinaryOperator *getOperator() const { return op; }
+
+  OrcaAstExpressionNode *getLhs() const { return lhs; }
+  OrcaAstExpressionNode *getRhs() const { return rhs; }
 
 private:
   OrcaAstExpressionNode *lhs;
   OrcaAstExpressionNode *rhs;
-  std::string op;
+  std::string opSymbol;
+  OrcaBinaryOperator *op;
 
   friend class OrcaTypeChecker;
 };
@@ -217,10 +259,20 @@ public:
 class OrcaAstUnaryExpressionNode : public OrcaAstExpressionNode {
 public:
   OrcaAstUnaryExpressionNode(ParserRuleContext *pContext,
-                             OrcaAstExpressionNode *expr, std::string op)
-      : expr(expr), op(op) {
+                             OrcaAstExpressionNode *expr, std::string opSymbol)
+      : expr(expr), opSymbol(opSymbol) {
     this->parseContext = pContext;
     evaluatedType = nullptr;
+
+    if (opSymbol == "~")
+      op = OrcaBitwiseNotOperator::getInstance();
+    else if (opSymbol == "-")
+      op = OrcaNegOperator::getInstance();
+    else if (opSymbol == "!")
+      op = OrcaNotOperator::getInstance();
+    else
+      throw std::runtime_error("Unknown unary operator: " + opSymbol +
+                               ". This is a bug.");
   }
 
   std::any accept(OrcaAstVisitor &visitor) override;
@@ -231,9 +283,31 @@ public:
     expr->print(indent + 4);
   }
 
+  std::string toString(int indent) override {
+    return std::string(indent, ' ') + "UnaryExpressionNode " + KYEL + opSymbol +
+           " " + KNRM + contextString() + "\n" + expr->toString(indent + 2);
+  }
+
+  /**
+   * @brief Get the expression of the unary expression.
+   *
+   * @return OrcaAstExpressionNode*
+   */
+  OrcaAstExpressionNode *getExpr() const { return expr; }
+
+  /**
+   * @brief Get the operator of the unary expression.
+   *
+   * @return std::string
+   */
+  std::string getOp() const { return opSymbol; }
+
+  OrcaUnaryOperator *getOperator() const { return op; }
+
 private:
   OrcaAstExpressionNode *expr;
-  std::string op;
+  std::string opSymbol;
+  OrcaUnaryOperator *op;
 };
 
 class OrcaAstConditionalExpressionNode : public OrcaAstExpressionNode {

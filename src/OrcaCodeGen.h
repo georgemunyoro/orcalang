@@ -45,9 +45,9 @@ public:
   visitConditionalExpression(OrcaAstConditionalExpressionNode *node) override {
     throw "TODO";
   };
-  std::any visitUnaryExpression(OrcaAstUnaryExpressionNode *node) override {
-    throw "TODO";
-  };
+
+  std::any visitUnaryExpression(OrcaAstUnaryExpressionNode *node) override;
+
   std::any visitExpressionList(OrcaAstExpressionListNode *node) override {
     throw "TODO";
   };
@@ -67,9 +67,8 @@ public:
 
   std::any visitJumpStatement(OrcaAstJumpStatementNode *node) override;
 
-  std::any visitBinaryExpression(OrcaAstBinaryExpressionNode *node) override {
-    throw "TODO";
-  };
+  std::any visitBinaryExpression(OrcaAstBinaryExpressionNode *node) override;
+
   std::any
   visitIdentifierExpression(OrcaAstIdentifierExpressionNode *node) override {
     throw "TODO";

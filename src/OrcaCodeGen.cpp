@@ -5,9 +5,16 @@
 #include <any>
 
 std::any OrcaCodeGen::visitProgram(OrcaAstProgramNode *node) {
-  for (auto &node : node->getNodes()) {
+  for (auto &node : node->getNodes())
     node->accept(*this);
-  }
+
+  return std::any();
+}
+
+std::any
+OrcaCodeGen::visitCompoundStatement(OrcaAstCompoundStatementNode *node) {
+  for (auto &node : node->getNodes())
+    node->accept(*this);
 
   return std::any();
 }
@@ -15,22 +22,19 @@ std::any OrcaCodeGen::visitProgram(OrcaAstProgramNode *node) {
 std::any OrcaCodeGen::visitFunctionDeclarationStatement(
     OrcaAstFunctionDeclarationNode *node) {
 
-  // Convert OrcaType to LLVMType
-  auto functionType = generateType(node->evaluatedType);
+  llvm::Type *functionType = generateType(node->evaluatedType);
 
-  // Create function
   auto function = llvm::Function::Create(
       llvm::cast<llvm::FunctionType>(functionType),
       llvm::Function::ExternalLinkage, node->getName(), module.get());
 
-  // Create entry block
   auto entryBlock = llvm::BasicBlock::Create(*llvmContext, "entry", function);
   builder->SetInsertPoint(entryBlock);
 
   // Enter a new scope
   namedValues = new OrcaScope<llvm::AllocaInst *>(namedValues);
 
-  // Create function arguments
+  // Allocate space for the parameters, and store them in the scope
   auto argument = function->arg_begin();
   for (auto &parameter : node->getParameters()) {
     auto paramAlloca =
@@ -43,7 +47,6 @@ std::any OrcaCodeGen::visitFunctionDeclarationStatement(
   // Generate function body
   node->getBody()->accept(*this);
 
-  // Check if the function is terminated
   if (entryBlock->getTerminator() == nullptr) {
 
     // If the function is not terminated and the return type is
@@ -66,32 +69,22 @@ std::any OrcaCodeGen::visitFunctionDeclarationStatement(
   return function;
 }
 
-std::any
-OrcaCodeGen::visitCompoundStatement(OrcaAstCompoundStatementNode *node) {
-  for (auto &node : node->getNodes()) {
-    node->accept(*this);
-  }
-
-  return std::any();
-}
-
 std::any OrcaCodeGen::visitJumpStatement(OrcaAstJumpStatementNode *node) {
 
   if (node->getKeyword() == "return") {
-    if (node->getExpr() == nullptr) {
+    if (node->getExpr() == nullptr)
       return builder->CreateRetVoid();
-    }
 
     auto returnValue =
         std::any_cast<llvm::Value *>(node->getExpr()->accept(*this));
     return builder->CreateRet(returnValue);
   }
 
-  throw OrcaError(compileContext, "Unknown jump statement",
+  throw OrcaError(compileContext,
+                  "Unknown jump statement '" + node->getKeyword() +
+                      "'. This is a bug.",
                   node->parseContext->getStart()->getLine(),
                   node->parseContext->getStart()->getCharPositionInLine());
-
-  return std::any();
 }
 
 std::any OrcaCodeGen::visitIntegerLiteralExpression(
@@ -100,3 +93,19 @@ std::any OrcaCodeGen::visitIntegerLiteralExpression(
       *llvmContext, llvm::APInt(node->evaluatedType->getIntegerType().getBits(),
                                 node->getValue()));
 }
+
+std::any OrcaCodeGen::visitUnaryExpression(OrcaAstUnaryExpressionNode *node) {
+  llvm::Value *operand =
+      std::any_cast<llvm::Value *>(node->getExpr()->accept(*this));
+
+  return node->getOperator()->codegen(builder, operand);
+};
+
+std::any OrcaCodeGen::visitBinaryExpression(OrcaAstBinaryExpressionNode *node) {
+  llvm::Value *lhs =
+      std::any_cast<llvm::Value *>(node->getLhs()->accept(*this));
+  llvm::Value *rhs =
+      std::any_cast<llvm::Value *>(node->getRhs()->accept(*this));
+
+  return node->getOperator()->codegen(builder, lhs, rhs);
+};
