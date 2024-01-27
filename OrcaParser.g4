@@ -4,19 +4,75 @@ options {
 	tokenVocab = OrcaLexer;
 }
 
-program: expression EOF;
+program: statement* EOF;
+
+statement:
+	labeledStatement
+	| compoundStatement
+	| selectionStatement
+	| expressionStatement
+	| iterationStatement
+	| jumpStatement
+	| declarationStatement;
+
+declarationStatement:
+	functionDeclarationStatement
+	| typeDeclaration;
+
+typeDeclaration:
+	'type' name = Identifier typeToAlias = type ';'
+	| 'type' '<' params = identifierList '>' name = Identifier typeToAlias = type ';';
+
+identifierList: Identifier (',' Identifier)*;
+
+functionDeclarationStatement:
+	'func' name = Identifier (
+		'(' args = functionArgs ')'
+		| '(' ')'
+	) '->' returnType = type body = compoundStatement
+	| 'func' name = Identifier '<' typeParams = identifierList '>' (
+		'(' args = functionArgs ')'
+		| '(' ')'
+	) '->' returnType = type body = compoundStatement;
+
+functionArgs: functionArg (',' functionArg)*;
+functionArg: name = Identifier ':' type;
+
+jumpStatement:
+	'break' ';'
+	| 'continue' ';'
+	| 'return' ';'
+	| 'return' expression ';';
+
+labeledStatement: Identifier ':' statement;
+
+compoundStatement: '{' statement* '}';
+
+selectionStatement:
+	'if' condition = expression then = compoundStatement (
+		'else' else = compoundStatement
+	)?;
+
+expressionStatement: expression ';';
+
+iterationStatement:
+	'while' condition = expression body = compoundStatement
+	| 'for' init = expression ';' condition = expression ';' update = expression body =
+		compoundStatement;
 
 type:
 	typeSpecifier
 	| '(' wrappedType = type ')'
 	| pointeeType = type STAR
-	| elementType = type '[]'
-	| '{' fields = structFieldDeclarationList '}'
-	| opaqueType = type '<' params = typeList '>';
+	| elementType = type '[' arraySize = Integer ']'
+	| '{' fields = structFieldDeclarationList methods = functionDeclarationStatement* '}'
+	| opaqueType = type '<' params = typeList '>'
+	| '$' nameOfFunctionToGetReturnTypeOf = Identifier
+	| '(' argsType = typeList ')' '->' returnType = type;
 
-structFieldDeclarationList:
-	structFieldDeclaration (',' structFieldDeclaration)*;
-structFieldDeclaration: field = Identifier ':' fieldType = type;
+structFieldDeclarationList: structFieldDeclaration*;
+structFieldDeclaration:
+	field = Identifier ':' fieldType = type ';';
 
 typeSpecifier:
 	T_U8
@@ -32,8 +88,7 @@ typeSpecifier:
 	| T_BOOL
 	| T_VOID
 	| T_CHAR
-	| Identifier
-	| '(' argsType = typeList ')' '->' returnType = type;
+	| Identifier;
 
 typeList: type (',' type)*;
 
@@ -41,7 +96,7 @@ expression: assignmentExpression;
 
 assignmentExpression:
 	conditionalExpression
-	| lhs = unaryExpression operator = assignmentOperator rhs = assignmentExpression;
+	| lhs = unaryExpression op = assignmentOperator rhs = assignmentExpression;
 
 assignmentOperator:
 	'='
@@ -57,63 +112,62 @@ assignmentOperator:
 	| '|=';
 
 conditionalExpression:
-	condition = logicalOrExpression (
-		'?' trueExpr = expression ':' elseExpr = conditionalExpression
-	)?;
+	logicalOrExpression
+	| condition = logicalOrExpression '?' thenExpr = expression ':' elseExpr = conditionalExpression
+		;
 
 logicalOrExpression:
-	lhs = logicalAndExpression ('||' rhs = logicalAndExpression)*;
+	logicalAndExpression
+	| lhs = logicalAndExpression '||' rhs = logicalOrExpression;
 
 logicalAndExpression:
-	lhs = inclusiveOrExpression (
-		'&&' rhs = inclusiveOrExpression
-	)*;
+	lhs = inclusiveOrExpression
+	| lhs = inclusiveOrExpression '&&' rhs = logicalAndExpression;
 
 inclusiveOrExpression:
-	lhs = exclusiveOrExpression ('|' rhs = exclusiveOrExpression)*;
+	exclusiveOrExpression
+	| lhs = exclusiveOrExpression '|' rhs = inclusiveOrExpression;
 
 exclusiveOrExpression:
-	lhs = andExpression ('^' rhs = andExpression)*;
+	andExpression
+	| lhs = andExpression '^' rhs = exclusiveOrExpression;
 
 andExpression:
-	lhs = equalityExpression ('&' rhs = equalityExpression)*;
+	equalityExpression
+	| lhs = equalityExpression '&' rhs = andExpression;
 
 equalityExpression:
-	lhs = relationalExpression (
-		('==' | '!=') rhs = relationalExpression
-	)*;
+	relationalExpression
+	| lhs = relationalExpression ('==' | '!=') rhs = equalityExpression;
 
 relationalExpression:
-	lhs = shiftExpression (
-		('<' | '>' | '<=' | '>=') rhs = shiftExpression
-	)*;
+	shiftExpression
+	| lhs = shiftExpression ('<' | '>' | '<=' | '>=') rhs = relationalExpression;
 
 shiftExpression:
-	lhs = additiveExpression (
-		('<<' | '>>') rhs = additiveExpression
-	)*;
+	additiveExpression
+	| lhs = additiveExpression ('>>' | '<<') rhs = shiftExpression;
 
 additiveExpression:
-	lhs = multiplicativeExpression (
-		('+' | '-') rhs = multiplicativeExpression
-	)*;
+	lhs = additiveExpression ('+' | '-') rhs = multiplicativeExpression
+	| multiplicativeExpression;
 
 multiplicativeExpression:
-	lhs = castExpression (('*' | '/' | '%') rhs = castExpression)*;
+	lhs = multiplicativeExpression ('*' | '/' | '%') rhs = castExpression
+	| castExpression;
 
 castExpression:
 	expr = castExpression 'as' typeToCastTo = type
 	| unaryExpression;
 
 unaryExpression:
-	('++' | '--')* (
-		postfixExpression
-		| operator = unaryOperator expr = unaryExpression
-		| 'sizeof' '(' typeToGetSizeOf = type ')'
-		| Identifier
-	);
+	postfixExpression
+	| sizeofExpression
+	| op = unaryOperator expr = unaryExpression;
 
-unaryOperator: '&' | '*' | '+' | '-' | '~' | '!';
+sizeofExpression: 'sizeof' '(' typeToGetSizeOf = type ')';
+
+unaryOperator: '&' | '*' | '+' | '-' | '~' | '!' | '++' | '--';
 
 /*
  * A postfix expression is a primary expression followed by zero or more postfix operators.
@@ -123,7 +177,8 @@ postfixExpression:
 		'[' index = expression ']'
 		| '.' field = Identifier
 		| '->' field = Identifier
-		| '(' args = argumentExpressionList? ')'
+		| '(' args = argumentExpressionList ')'
+		| '(' ')'
 		| '++'
 		| '--'
 	)*;
@@ -132,7 +187,10 @@ argumentExpressionList: expression (',' expression)*;
 
 primaryExpression:
 	letExpression
-	| Constant
+	| Integer
+	| Float
+	| Char
+	| Boolean
 	| String
 	| Identifier
 	| arrayExpression
@@ -144,11 +202,15 @@ letExpression: 'let' varName = Identifier ':' varType = type;
 /*
  * An array expression is a list of expressions. e.g. [1, 2, 3]
  */
-arrayExpression: '[' (expression (',' expression)*)? ']';
+arrayExpression: '[' expressionList ']';
+
+expressionList: expression (',' expression)*;
 
 /*
  * A field map is a map of identifiers to expressions. The identifiers are the keys, and the
  * expressions are the values. e.g. {a: 1, b: 2}
  */
-fieldMap: '{' fieldMapEntry+ '}';
-fieldMapEntry: key = Identifier ':' value = expression ',';
+fieldMap: '{' fieldMapEntry+ functionDeclarationStatement* '}';
+fieldMapEntry:
+	key = Identifier ':' value = expression ','
+	| typeOfField = type key = Identifier ',';

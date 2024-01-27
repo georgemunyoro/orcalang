@@ -8,3 +8,5 @@
 #define KMAG "\x1B[35m"
 #define KCYN "\x1B[36m"
 #define KWHT "\x1B[37m"
+#define KPRP "\033[35;"
+

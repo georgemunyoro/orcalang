@@ -1,0 +1,10 @@
+ProgramNode [1:0 - 4:0] ???
+  FunctionDeclarationNode main [1:0 - 3:0] ???
+     ->  TypeNode [1:15 - 1:15] 'u32' ???
+    CompoundStatementNode [1:19 - 3:0] ???
+      JumpStatementNode return [2:4 - 2:17] 'return~2+3;' ???
+        BinaryExpressionNode + [2:11 - 2:16] '~2+3' ???
+          UnaryExpressionNode ~ [2:11 - 2:12] '~2' ???
+            IntegerLiteralExpressionNode 2 [2:12 - 2:12] ???
+          IntegerLiteralExpressionNode 3 [2:16 - 2:16] ???
+

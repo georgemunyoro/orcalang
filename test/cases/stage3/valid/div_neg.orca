@@ -1,0 +1,3 @@
+func main() -> u32 {
+    return ((-12) / 5 as s32) as u32;
+}

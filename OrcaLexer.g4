@@ -1,6 +1,6 @@
 lexer grammar OrcaLexer;
 
-Constant: Integer | Float | Char | Boolean;
+// Constant: Integer | Float | Char | Boolean;
 Integer: DIGIT_NON_ZERO DIGIT* | DIGIT;
 Float: DIGIT+ '.' DIGIT+;
 String: '"' .*? '"';
@@ -59,6 +59,7 @@ SHL: '<<';
 SHR: '>>';
 MOD: '%';
 DIV: '/';
+DOLLAR: '$';
 
 // Types
 T_U8: 'u8';
@@ -87,5 +88,11 @@ BREAK: 'break';
 CONTINUE: 'continue';
 LET: 'let';
 AS: 'as';
+FN: 'func';
+TYPE: 'type';
+TRAIT: 'trait';
+IMPLEMENT: 'impl';
 
 Identifier: [a-zA-Z_][a-zA-Z0-9_]*;
+
+LineComment: '//' ~[\r\n]* -> channel(HIDDEN);
