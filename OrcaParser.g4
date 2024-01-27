@@ -147,8 +147,8 @@ shiftExpression:
 	| lhs = additiveExpression ('>>' | '<<') rhs = shiftExpression;
 
 additiveExpression:
-	multiplicativeExpression
-	| lhs = multiplicativeExpression ('+' | '-') rhs = additiveExpression;
+	lhs = additiveExpression ('+' | '-') rhs = multiplicativeExpression
+	| multiplicativeExpression;
 
 multiplicativeExpression:
 	castExpression
