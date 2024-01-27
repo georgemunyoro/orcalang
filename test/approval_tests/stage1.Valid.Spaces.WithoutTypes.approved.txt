@@ -1,7 +1,0 @@
-ProgramNode [2:0 - 3:0] void
-  FunctionDeclarationNode main [2:0 - 2:54] () -> u32
-     ->  TypeNode [2:26 - 2:26] 'u32' u32
-    CompoundStatementNode [2:33 - 2:54] void
-      JumpStatementNode return [2:35 - 2:51] 'return0;' void
-        IntegerLiteralExpressionNode 0 [2:47 - 2:47] u32
-
