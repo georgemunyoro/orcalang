@@ -26,11 +26,13 @@ typeDeclaration:
 identifierList: Identifier (',' Identifier)*;
 
 functionDeclarationStatement:
-	'func' name = Identifier ('(' args = functionArgs ')' | '('')') '->' returnType = type body =
-		compoundStatement
+	'func' name = Identifier (
+		'(' args = functionArgs ')'
+		| '(' ')'
+	) '->' returnType = type body = compoundStatement
 	| 'func' name = Identifier '<' typeParams = identifierList '>' (
 		'(' args = functionArgs ')'
-		| '('')'
+		| '(' ')'
 	) '->' returnType = type body = compoundStatement;
 
 functionArgs: functionArg (',' functionArg)*;
@@ -151,15 +153,15 @@ additiveExpression:
 	| multiplicativeExpression;
 
 multiplicativeExpression:
-	castExpression
-	| lhs = castExpression ('*' | '/' | '%') rhs = multiplicativeExpression;
+	lhs = multiplicativeExpression ('*' | '/' | '%') rhs = castExpression
+	| castExpression;
 
 castExpression:
 	expr = castExpression 'as' typeToCastTo = type
 	| unaryExpression;
 
 unaryExpression:
-	| postfixExpression
+	postfixExpression
 	| sizeofExpression
 	| op = unaryOperator expr = unaryExpression;
 
@@ -176,7 +178,7 @@ postfixExpression:
 		| '.' field = Identifier
 		| '->' field = Identifier
 		| '(' args = argumentExpressionList ')'
-		| '('')'
+		| '(' ')'
 		| '++'
 		| '--'
 	)*;
