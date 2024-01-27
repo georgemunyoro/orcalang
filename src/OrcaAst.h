@@ -258,6 +258,21 @@ public:
       : OrcaAstBinaryExpressionNode(pContext, lhs, rhs, op) {}
 
   std::any accept(OrcaAstVisitor &visitor) override;
+
+  void print(int indent) override {
+    printf("%*sAssignmentExpressionNode %s\n", indent, "",
+           contextString().c_str());
+    printf("%*slhs:\n", indent + 2, "");
+    getLhs()->print(indent + 4);
+    printf("%*srhs:\n", indent + 2, "");
+    getRhs()->print(indent + 4);
+  }
+
+  std::string toString(int indent) override {
+    return std::string(indent, ' ') + "AssignmentExpressionNode " +
+           contextString() + "\n" + getLhs()->toString(indent + 2) +
+           getRhs()->toString(indent + 2);
+  }
 };
 
 class OrcaAstUnaryExpressionNode : public OrcaAstExpressionNode {
@@ -338,6 +353,12 @@ public:
     elseExpr->print(indent + 4);
   }
 
+  std::string toString(int indent) override {
+    return std::string(indent, ' ') + "ConditionalExpressionNode " +
+           contextString() + "\n" + condition->toString(indent + 2) +
+           thenExpr->toString(indent + 2) + elseExpr->toString(indent + 2);
+  }
+
 private:
   OrcaAstExpressionNode *condition;
   OrcaAstExpressionNode *thenExpr;
@@ -366,6 +387,16 @@ public:
     }
   }
 
+  std::string toString(int indent) override {
+    std::string result = std::string(indent, ' ') + "ExpressionListNode " +
+                         contextString() + "\n";
+
+    for (auto &expression : expressions)
+      result += expression->toString(indent + 2);
+
+    return result;
+  }
+
 private:
   std::vector<OrcaAstExpressionNode *> expressions;
 };
@@ -385,6 +416,11 @@ public:
     printf("%*sTypeDeclarationNode %s%s%s %s\n", indent, "", KYEL, name.c_str(),
            KNRM, contextString().c_str());
     type->print(indent + 2);
+  }
+
+  std::string toString(int indent) override {
+    return std::string(indent, ' ') + "TypeDeclarationNode " + KYEL + name +
+           KNRM + " " + contextString() + "\n" + type->toString(indent + 2);
   }
 
 private:
@@ -415,6 +451,21 @@ public:
     printf("%*sname: %s\n", indent + 2, "", name.c_str());
     printf("%*stype:\n", indent + 2, "");
     type->print(indent + 4);
+  }
+
+  std::string toString(int indent) override {
+    std::string result = std::string(indent, ' ') +
+                         "TemplateTypeDeclarationNode " + contextString() +
+                         "\n" + type->toString(indent + 2);
+
+    result += std::string(indent + 2, ' ') + "params:\n";
+    for (auto &param : params) {
+      result += std::string(indent + 4, ' ') + param + "\n";
+    }
+
+    result += std::string(indent + 2, ' ') + "name: " + name + "\n";
+
+    return result;
   }
 
 private:
@@ -609,6 +660,11 @@ public:
     index->print(indent + 4);
   }
 
+  std::string toString(int indent) override {
+    return std::string(indent, ' ') + "IndexExpressionNode " + contextString() +
+           "\n" + expr->toString(indent + 2) + index->toString(indent + 2);
+  }
+
 private:
   OrcaAstExpressionNode *expr;
   OrcaAstExpressionNode *index;
@@ -641,6 +697,11 @@ public:
     printf("%*skind: %d\n", indent + 2, "", (int)kind);
   }
 
+  std::string toString(int indent) override {
+    return std::string(indent, ' ') + "MemberAccessExpressionNode " +
+           contextString() + "\n" + expr->toString(indent + 2);
+  }
+
 private:
   OrcaAstExpressionNode *expr;
   std::string member;
@@ -670,6 +731,17 @@ public:
     }
   }
 
+  std::string toString(int indent) override {
+    std::string result = std::string(indent, ' ') +
+                         "FunctionCallExpressionNode " + contextString() +
+                         "\n" + expr->toString(indent + 2);
+
+    for (auto &arg : args)
+      result += arg->toString(indent + 2);
+
+    return result;
+  }
+
 private:
   OrcaAstExpressionNode *expr;
   std::vector<OrcaAstExpressionNode *> args;
@@ -693,6 +765,11 @@ public:
     printf("%*sexpr:\n", indent + 2, "");
     expr->print(indent + 4);
     printf("%*sop: %s\n", indent + 2, "", op.c_str());
+  }
+
+  std::string toString(int indent) override {
+    return std::string(indent, ' ') + "PostfixExpressionNode " +
+           contextString() + "\n" + expr->toString(indent + 2);
   }
 
 private:
@@ -742,6 +819,11 @@ public:
     printf("%*svalue: %f\n", indent + 2, "", value);
   }
 
+  std::string toString(int indent) override {
+    return std::string(indent, ' ') + "FloatLiteralExpressionNode " +
+           contextString() + "\n";
+  }
+
 private:
   float value;
 };
@@ -761,6 +843,11 @@ public:
     printf("%*sStringLiteralExpressionNode %s\n", indent, "",
            contextString().c_str());
     printf("%*svalue: %s\n", indent + 2, "", value.c_str());
+  }
+
+  std::string toString(int indent) override {
+    return std::string(indent, ' ') + "StringLiteralExpressionNode " +
+           contextString() + "\n";
   }
 
 private:
@@ -805,6 +892,11 @@ public:
   void print(int indent) override {
     printf("%*sIdentifierExpressionNode %s%s%s %s\n", indent, "", KYEL,
            name.c_str(), KNRM, contextString().c_str());
+  }
+
+  std::string toString(int indent) override {
+    return std::string(indent, ' ') + "IdentifierExpressionNode " + KYEL +
+           name + KNRM + " " + contextString() + "\n";
   }
 
   std::string getName() { return name; }

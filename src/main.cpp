@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
 
   OrcaContext context(argv[1]);
 
-  printf("\n%s\n", context.getSourceCode().c_str());
+  // printf("\n%s\n", context.getSourceCode().c_str());
 
   context.lex();
   context.parse();

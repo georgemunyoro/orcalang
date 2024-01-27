@@ -46,6 +46,8 @@ public:
 
   void codegen();
 
+  OrcaCodeGen &getCodeGenerator() const { return *codeGenerator; }
+
   OrcaAstProgramNode *getAst() const { return ast; }
 
   const std::string &getSourceCode() const { return source_code; }

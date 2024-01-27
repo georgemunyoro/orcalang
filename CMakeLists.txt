@@ -79,6 +79,7 @@ add_executable(orca
               src/OrcaTypeChecker.cpp
               src/OrcaScope.cpp
               src/OrcaCodeGen.cpp
+              src/OrcaOperator.cpp
               ${ANTLR_OrcaLexer_CXX_OUTPUTS}
               ${ANTLR_OrcaParser_CXX_OUTPUTS}
 )
@@ -101,8 +102,10 @@ add_executable(orca_test
               src/OrcaTypeChecker.cpp
               src/OrcaScope.cpp
               src/OrcaCodeGen.cpp
+              src/OrcaOperator.cpp
 
-              test/stage1.cpp
+              test/utils.cpp
+              test/snapshot.cpp
               test/main.cpp
 
                ${ANTLR_OrcaLexer_CXX_OUTPUTS}

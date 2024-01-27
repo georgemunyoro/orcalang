@@ -119,7 +119,7 @@ public:
 
   void generateCode(OrcaAstProgramNode *node) {
     node->accept(*this);
-    module->print(llvm::errs(), nullptr);
+    llvm::verifyModule(*module, &llvm::errs());
   }
 
   std::unique_ptr<llvm::LLVMContext> llvmContext;

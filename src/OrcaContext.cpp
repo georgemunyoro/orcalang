@@ -43,13 +43,13 @@ void OrcaContext::buildAst() {
   // ast->print(0);
   // printf("\n");
 
-  try {
-    std::cout << "========== AST built successfully ===========" << std::endl;
-    std::cout << ast->toString(0) << std::endl;
-  } catch (char *c) {
-    std::cout << "========= AST Failed to build ==========" << std::endl;
-    std::cout << c << std::endl;
-  }
+  // try {
+  //   std::cout << "========== AST built successfully ===========" <<
+  //   std::endl; std::cout << ast->toString(0) << std::endl;
+  // } catch (char *c) {
+  //   std::cout << "========= AST Failed to build ==========" << std::endl;
+  //   std::cout << c << std::endl;
+  // }
 }
 
 void OrcaContext::evaluateTypes() {
@@ -59,14 +59,15 @@ void OrcaContext::evaluateTypes() {
   // ast->print(0);
   // printf("\n");
 
-  try {
-    std::cout << "========== Type checking completed successfully ==========="
-              << std::endl;
-    std::cout << ast->toString(0) << std::endl;
-  } catch (char *c) {
-    std::cout << "========= Type checking failed ==========" << std::endl;
-    std::cout << c << std::endl;
-  }
+  // try {
+  //   std::cout << "========== Type checking completed successfully
+  //   ==========="
+  //             << std::endl;
+  //   std::cout << ast->toString(0) << std::endl;
+  // } catch (char *c) {
+  //   std::cout << "========= Type checking failed ==========" << std::endl;
+  //   std::cout << c << std::endl;
+  // }
 }
 
 void OrcaContext::codegen() {
