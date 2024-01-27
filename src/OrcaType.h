@@ -45,6 +45,12 @@ public:
 
   OrcaTypeKind getKind() const { return OrcaTypeKind::Float; }
 
+  std::string toString() const {
+    return std::string("f") + std::to_string(bits);
+  }
+
+  int getBits() const { return bits; }
+
 private:
   int bits;
 
@@ -264,6 +270,14 @@ public:
     }
   }
 
+  OrcaFloatType getFloatType() const {
+    if (kind == OrcaTypeKind::Float) {
+      return floatType;
+    } else {
+      throw std::runtime_error("Type is not a float type.");
+    }
+  }
+
   bool isEqual(OrcaType *other) {
     if (kind != other->kind) {
       return false;
@@ -331,6 +345,8 @@ public:
     }
     }
   }
+
+  bool is(OrcaTypeKind kind) { return this->kind == kind; }
 
 private:
   OrcaTypeKind kind;

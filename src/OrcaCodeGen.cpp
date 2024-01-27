@@ -1,4 +1,5 @@
 #include "OrcaCodeGen.h"
+#include "OrcaAst.h"
 #include "OrcaError.h"
 #include "OrcaScope.h"
 #include "OrcaType.h"
@@ -109,3 +110,43 @@ std::any OrcaCodeGen::visitBinaryExpression(OrcaAstBinaryExpressionNode *node) {
 
   return node->getOperator()->codegen(builder, lhs, rhs);
 };
+
+std::any OrcaCodeGen::visitCastExpression(OrcaAstCastExpressionNode *node) {
+  llvm::Value *operand =
+      std::any_cast<llvm::Value *>(node->getExpr()->accept(*this));
+
+  OrcaType *fromType = node->getExpr()->evaluatedType;
+  OrcaType *toType = node->evaluatedType;
+
+  if (toType->is(OrcaTypeKind::Integer)) {
+    switch (fromType->getKind()) {
+    case OrcaTypeKind::Integer:
+    case OrcaTypeKind::Boolean:
+    case OrcaTypeKind::Char:
+    case OrcaTypeKind::Float: {
+      if (fromType->sizeOf() < toType->sizeOf())
+        return builder->CreateSExt(operand, generateType(toType));
+
+      if (fromType->sizeOf() > toType->sizeOf())
+        return builder->CreateTrunc(operand, generateType(toType));
+
+      return builder->CreateBitCast(operand, generateType(toType));
+    }
+
+    case OrcaTypeKind::Pointer: {
+      return builder->CreatePtrToInt(operand,
+                                     generateType(node->evaluatedType));
+    }
+
+    default:
+      break;
+    }
+  }
+
+  throw OrcaError(compileContext,
+                  "Cannot cast from '" +
+                      node->getExpr()->evaluatedType->toString() + "' to '" +
+                      node->evaluatedType->toString() + "'",
+                  node->parseContext->getStart()->getLine(),
+                  node->parseContext->getStart()->getCharPositionInLine());
+}

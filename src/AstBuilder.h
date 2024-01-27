@@ -8,7 +8,8 @@ using namespace orcagrammar;
 
 class OrcaAstBuilder : public OrcaParserVisitor {
 public:
-  OrcaAstBuilder(OrcaContext &compileContext) : compileContext(compileContext) {}
+  OrcaAstBuilder(OrcaContext &compileContext)
+      : compileContext(compileContext) {}
 
   std::any visitProgram(OrcaParser::ProgramContext *context) override;
 
@@ -111,9 +112,7 @@ public:
   };
 
   std::any
-  visitCastExpression(OrcaParser::CastExpressionContext *context) override {
-    throw "TODO";
-  };
+  visitCastExpression(OrcaParser::CastExpressionContext *context) override;
 
   std::any
   visitUnaryExpression(OrcaParser::UnaryExpressionContext *context) override;

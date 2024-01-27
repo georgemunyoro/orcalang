@@ -132,7 +132,8 @@ class OrcaTypeChecker : OrcaAstVisitor {
   };
 
   std::any visitType(OrcaAstTypeNode *node) override {
-    return std::any(evaluateTypeContext(node->typeContext));
+    node->evaluatedType = evaluateTypeContext(node->typeContext);
+    return std::any(node->evaluatedType);
   };
 
   std::any visitCompoundStatement(OrcaAstCompoundStatementNode *node) override {
@@ -299,6 +300,29 @@ class OrcaTypeChecker : OrcaAstVisitor {
     node->evaluatedType = T_void;
     return node->evaluatedType;
   };
+
+  std::any visitCastExpression(OrcaAstCastExpressionNode *node) override {
+
+    auto type = std::any_cast<OrcaType *>(node->getType()->accept(*this));
+    auto exprType = std::any_cast<OrcaType *>(node->getExpr()->accept(*this));
+
+    if (exprType->is(OrcaTypeKind::Integer)) {
+      switch (type->getKind()) {
+      case OrcaTypeKind::Integer:
+      case OrcaTypeKind::Float:
+        node->evaluatedType = type;
+        return std::any(node->evaluatedType);
+      default:
+        break;
+      }
+    }
+
+    throw OrcaError(compileContext,
+                    "Cannot cast from type '" + exprType->toString() +
+                        "' to type '" + type->toString() + "'.",
+                    node->parseContext->getStart()->getLine(),
+                    node->parseContext->getStart()->getCharPositionInLine());
+  }
 
   // Type map for mapping ast nodes to types
   std::map<OrcaAstNode *, OrcaType *> typeMap;

@@ -145,6 +145,66 @@ protected:
   static OrcaSubtractionOperator *instance;
 };
 
+/**
+ * @brief OrcaMultiplicationOperator is used to represent the multiplication
+ * operator in the Orca language.
+ */
+class OrcaMultiplicationOperator : public OrcaBinaryOperator {
+public:
+  OrcaMultiplicationOperator() {
+    opSymbol = "*";
+    instance = this;
+  }
+  ~OrcaMultiplicationOperator() = default;
+
+  OrcaType *getResultingType(OrcaType *left, OrcaType *right) override;
+
+  llvm::Value *codegen(std::unique_ptr<llvm::IRBuilder<>> &builder,
+                       llvm::Value *lhs, llvm::Value *rhs) override;
+
+  /**
+   * @brief Get the instance of the OrcaMultiplicationOperator.
+   */
+  static OrcaMultiplicationOperator *getInstance() {
+    if (instance == nullptr)
+      instance = new OrcaMultiplicationOperator();
+    return instance;
+  };
+
+protected:
+  static OrcaMultiplicationOperator *instance;
+};
+
+/**
+ * @brief OrcaDivisionOperator is used to represent the division operator in
+ * the Orca language.
+ */
+class OrcaDivisionOperator : public OrcaBinaryOperator {
+public:
+  OrcaDivisionOperator() {
+    opSymbol = "/";
+    instance = this;
+  }
+  ~OrcaDivisionOperator() = default;
+
+  OrcaType *getResultingType(OrcaType *left, OrcaType *right) override;
+
+  llvm::Value *codegen(std::unique_ptr<llvm::IRBuilder<>> &builder,
+                       llvm::Value *lhs, llvm::Value *rhs) override;
+
+  /**
+   * @brief Get the instance of the OrcaDivisionOperator.
+   */
+  static OrcaDivisionOperator *getInstance() {
+    if (instance == nullptr)
+      instance = new OrcaDivisionOperator();
+    return instance;
+  };
+
+protected:
+  static OrcaDivisionOperator *instance;
+};
+
 // ======================================================================
 // =========================== Unary Operators ==========================
 // ======================================================================

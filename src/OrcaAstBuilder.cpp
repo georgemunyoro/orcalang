@@ -352,22 +352,10 @@ std::any OrcaAstBuilder::visitMultiplicativeExpression(
 
   assert(context->children.size() == 1);
 
+  assert(context->castExpression());
+
   // Fall through to cast expression
-  return visit(context->children.at(0));
-}
-
-std::any OrcaAstBuilder::visitCastExpression(
-    OrcaParser::CastExpressionContext *context) {
-  // Cast expression
-  if (context->typeToCastTo) {
-    // TODO: Implement cast expression
-    printf("TODO: Implement cast expression\n");
-    throw "TODO";
-    exit(1);
-  }
-
-  // Fall through to unary expression
-  return visit(context->unaryExpression());
+  return visit(context->castExpression());
 }
 
 std::any OrcaAstBuilder::visitSizeofExpression(
@@ -583,4 +571,20 @@ OrcaAstBuilder::visitJumpStatement(OrcaParser::JumpStatementContext *context) {
 
   return std::any((OrcaAstNode *)new OrcaAstJumpStatementNode(
       context, "return", std::any_cast<OrcaAstExpressionNode *>(expr)));
+}
+
+std::any OrcaAstBuilder::visitCastExpression(
+    OrcaParser::CastExpressionContext *context) {
+
+  if (context->typeToCastTo) {
+    auto type = std::any_cast<OrcaAstTypeNode *>(visit(context->typeToCastTo));
+    auto expr = std::any_cast<OrcaAstExpressionNode *>(
+        visit(context->castExpression()));
+
+    auto node = new OrcaAstCastExpressionNode(context, type, expr);
+
+    return std::any((OrcaAstExpressionNode *)node);
+  }
+
+  return visit(context->unaryExpression());
 }

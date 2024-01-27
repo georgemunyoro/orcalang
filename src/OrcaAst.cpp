@@ -77,3 +77,7 @@ std::any OrcaAstBooleanLiteralExpressionNode::accept(OrcaAstVisitor &visitor) {
 std::any OrcaAstExpressionStatementNode::accept(OrcaAstVisitor &visitor) {
   return visitor.visitExpressionStatement(this);
 }
+
+std::any OrcaAstCastExpressionNode::accept(OrcaAstVisitor &visitor) {
+  return visitor.visitCastExpression(this);
+}

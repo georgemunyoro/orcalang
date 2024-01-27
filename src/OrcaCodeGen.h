@@ -1,9 +1,6 @@
 #pragma once
 
-#include "llvm/ADT/APFloat.h"
-#include "llvm/ADT/STLExtras.h"
 #include "llvm/IR/BasicBlock.h"
-#include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
@@ -13,6 +10,7 @@
 #include "llvm/IR/Verifier.h"
 #include <memory>
 
+#include "OrcaAst.h"
 #include "OrcaAstVisitor.h"
 #include "OrcaError.h"
 #include "OrcaLexerErrorListener.h"
@@ -92,6 +90,8 @@ public:
   visitExpressionStatement(OrcaAstExpressionStatementNode *node) override {
     throw "TODO";
   };
+
+  std::any visitCastExpression(OrcaAstCastExpressionNode *node) override;
 
   llvm::Type *generateType(OrcaType *type) {
     switch (type->getKind()) {

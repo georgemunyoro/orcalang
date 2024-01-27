@@ -35,4 +35,5 @@ public:
   visitBooleanLiteralExpression(OrcaAstBooleanLiteralExpressionNode *node) = 0;
   virtual std::any
   visitExpressionStatement(OrcaAstExpressionStatementNode *node) = 0;
+  virtual std::any visitCastExpression(OrcaAstCastExpressionNode *node) = 0;
 };

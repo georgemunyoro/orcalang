@@ -187,6 +187,10 @@ public:
       op = OrcaAdditionOperator::getInstance();
     else if (opSymbol == "-")
       op = OrcaSubtractionOperator::getInstance();
+    else if (opSymbol == "/")
+      op = OrcaDivisionOperator::getInstance();
+    else if (opSymbol == "*")
+      op = OrcaMultiplicationOperator::getInstance();
 
     // } else if (op == "*") {
     //   op = OrcaBinaryOperator::Multiply;
@@ -807,4 +811,36 @@ public:
 
 private:
   std::string name;
+};
+
+class OrcaAstCastExpressionNode : public OrcaAstExpressionNode {
+public:
+  OrcaAstCastExpressionNode(ParserRuleContext *pContext, OrcaAstTypeNode *type,
+                            OrcaAstExpressionNode *expr)
+      : type(type), expr(expr) {
+    this->parseContext = pContext;
+    evaluatedType = nullptr;
+  }
+
+  std::any accept(OrcaAstVisitor &visitor) override;
+
+  void print(int indent) override {
+    printf("%*sCastExpressionNode %s\n", indent, "", contextString().c_str());
+    printf("%*stype:\n", indent + 2, "");
+    type->print(indent + 4);
+    printf("%*sexpr:\n", indent + 2, "");
+    expr->print(indent + 4);
+  }
+
+  OrcaAstTypeNode *getType() { return type; }
+  OrcaAstExpressionNode *getExpr() { return expr; }
+
+  std::string toString(int indent) override {
+    return std::string(indent, ' ') + "CastExpressionNode " + contextString() +
+           "\n" + expr->toString(indent + 2) + type->toString(indent + 2);
+  }
+
+private:
+  OrcaAstTypeNode *type;
+  OrcaAstExpressionNode *expr;
 };
