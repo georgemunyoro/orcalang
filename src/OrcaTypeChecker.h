@@ -214,8 +214,6 @@ class OrcaTypeChecker : OrcaAstVisitor {
   std::any visitJumpStatement(OrcaAstJumpStatementNode *node) override {
 
     if (node->keyword == "return") {
-      auto retType = std::any_cast<OrcaType *>(node->expr->accept(*this));
-
       if (!currentFunctionInfo.isInFunction) {
         throw OrcaError(
             compileContext, "Cannot return from outside of a function.",
@@ -223,9 +221,10 @@ class OrcaTypeChecker : OrcaAstVisitor {
             node->parseContext->getStart()->getCharPositionInLine());
       }
 
-      if (retType->getKind() != currentFunctionInfo.type->getFunctionType()
-                                    .getReturnType()
-                                    ->getKind()) {
+      auto retType = std::any_cast<OrcaType *>(node->expr->accept(*this));
+
+      if (!retType->isEqual(
+              currentFunctionInfo.type->getFunctionType().getReturnType())) {
         throw OrcaError(
             compileContext,
             "Cannot return value of type '" + retType->toString() +

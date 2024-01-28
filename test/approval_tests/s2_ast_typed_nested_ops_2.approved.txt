@@ -2,8 +2,10 @@ ProgramNode [1:0 - 4:0] void
   FunctionDeclarationNode main [1:0 - 3:0] () -> u32
      ->  TypeNode [1:15 - 1:15] 'u32' u32
     CompoundStatementNode [1:19 - 3:0] void
-      JumpStatementNode return [2:4 - 2:14] 'return-~0;' void
-        UnaryExpressionNode - [2:11 - 2:13] '-~0' s32
-          UnaryExpressionNode ~ [2:12 - 2:13] '~0' u32
-            IntegerLiteralExpressionNode 0 [2:13 - 2:13] u32
+      JumpStatementNode return [2:4 - 2:23] 'return(-~0)asu32;' void
+        CastExpressionNode [2:11 - 2:20] '(-~0)asu32' u32
+          UnaryExpressionNode - [2:12 - 2:14] '-~0' s32
+            UnaryExpressionNode ~ [2:13 - 2:14] '~0' u32
+              IntegerLiteralExpressionNode 0 [2:14 - 2:14] u32
+          TypeNode [2:20 - 2:20] 'u32' u32
 
