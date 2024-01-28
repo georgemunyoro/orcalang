@@ -90,16 +90,22 @@ std::any OrcaCodeGen::visitJumpStatement(OrcaAstJumpStatementNode *node) {
 
 std::any OrcaCodeGen::visitIntegerLiteralExpression(
     OrcaAstIntegerLiteralExpressionNode *node) {
-  return (llvm::Value *)llvm::ConstantInt::get(
-      *llvmContext, llvm::APInt(node->evaluatedType->getIntegerType().getBits(),
-                                node->getValue()));
+
+  size_t bitSize = node->evaluatedType->getIntegerType().getBits();
+  size_t value = node->getValue();
+
+  auto llvmInt = node->evaluatedType->getIntegerType().getIsSigned()
+                     ? llvm::APSInt(bitSize, value)
+                     : llvm::APInt(bitSize, value);
+
+  return (llvm::Value *)llvm::ConstantInt::get(*llvmContext, llvmInt);
 }
 
 std::any OrcaCodeGen::visitUnaryExpression(OrcaAstUnaryExpressionNode *node) {
   llvm::Value *operand =
       std::any_cast<llvm::Value *>(node->getExpr()->accept(*this));
 
-  return node->getOperator()->codegen(builder, operand);
+  return node->getOperator()->codegen(*this, operand);
 };
 
 std::any OrcaCodeGen::visitBinaryExpression(OrcaAstBinaryExpressionNode *node) {
@@ -108,7 +114,7 @@ std::any OrcaCodeGen::visitBinaryExpression(OrcaAstBinaryExpressionNode *node) {
   llvm::Value *rhs =
       std::any_cast<llvm::Value *>(node->getRhs()->accept(*this));
 
-  return node->getOperator()->codegen(builder, lhs, rhs);
+  return node->getOperator()->codegen(*this, lhs, rhs);
 };
 
 std::any OrcaCodeGen::visitCastExpression(OrcaAstCastExpressionNode *node) {

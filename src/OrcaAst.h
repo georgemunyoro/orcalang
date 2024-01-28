@@ -3,11 +3,22 @@
 #include <ParserRuleContext.h>
 #include <any>
 #include <cstdio>
-#include <map>
 #include <string>
 
 #include "./utils/printfColors.h"
-#include "OrcaOperator.h"
+
+#include "Operator/Binary/Add.h"
+#include "Operator/Binary/Binary.h"
+#include "Operator/Binary/CmpEQ.h"
+#include "Operator/Binary/Div.h"
+#include "Operator/Binary/LogicalAnd.h"
+#include "Operator/Binary/Mul.h"
+#include "Operator/Binary/Sub.h"
+
+#include "Operator/Unary/BitNot.h"
+#include "Operator/Unary/Neg.h"
+#include "Operator/Unary/Not.h"
+#include "Operator/Unary/Unary.h"
 #include "OrcaParser.h"
 #include "OrcaType.h"
 
@@ -184,15 +195,17 @@ public:
     evaluatedType = nullptr;
 
     if (opSymbol == "+")
-      op = OrcaAdditionOperator::getInstance();
+      op = orca::AddOperator::getInstance();
     else if (opSymbol == "-")
-      op = OrcaSubtractionOperator::getInstance();
+      op = orca::SubOperator::getInstance();
     else if (opSymbol == "/")
-      op = OrcaDivisionOperator::getInstance();
+      op = orca::DivOperator::getInstance();
     else if (opSymbol == "*")
-      op = OrcaMultiplicationOperator::getInstance();
+      op = orca::MulOperator::getInstance();
     else if (opSymbol == "&&")
-      op = OrcaLogicalAndOperator::getInstance();
+      op = orca::LogicalAndOperator::getInstance();
+    else if (opSymbol == "==")
+      op = orca::CmpEQOperator::getInstance();
 
     // } else if (op == "*") {
     //   op = OrcaBinaryOperator::Multiply;
@@ -238,7 +251,7 @@ public:
            lhs->toString(indent + 2) + rhs->toString(indent + 2);
   }
 
-  OrcaBinaryOperator *getOperator() const { return op; }
+  orca::BinaryOperator *getOperator() const { return op; }
 
   OrcaAstExpressionNode *getLhs() const { return lhs; }
   OrcaAstExpressionNode *getRhs() const { return rhs; }
@@ -247,7 +260,7 @@ private:
   OrcaAstExpressionNode *lhs;
   OrcaAstExpressionNode *rhs;
   std::string opSymbol;
-  OrcaBinaryOperator *op;
+  orca::BinaryOperator *op;
 
   friend class OrcaTypeChecker;
 };
@@ -286,11 +299,11 @@ public:
     evaluatedType = nullptr;
 
     if (opSymbol == "~")
-      op = OrcaBitwiseNotOperator::getInstance();
+      op = orca::BitNotOperator::getInstance();
     else if (opSymbol == "-")
-      op = OrcaNegOperator::getInstance();
+      op = orca::NegOperator::getInstance();
     else if (opSymbol == "!")
-      op = OrcaNotOperator::getInstance();
+      op = orca::NotOperator::getInstance();
     else
       throw std::runtime_error("Unknown unary operator: " + opSymbol +
                                ". This is a bug.");
@@ -323,12 +336,12 @@ public:
    */
   std::string getOp() const { return opSymbol; }
 
-  OrcaUnaryOperator *getOperator() const { return op; }
+  orca::UnaryOperator *getOperator() const { return op; }
 
 private:
   OrcaAstExpressionNode *expr;
   std::string opSymbol;
-  OrcaUnaryOperator *op;
+  orca::UnaryOperator *op;
 };
 
 class OrcaAstConditionalExpressionNode : public OrcaAstExpressionNode {

@@ -6,6 +6,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/NoFolder.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
 #include <memory>
@@ -13,6 +14,7 @@
 #include "OrcaAst.h"
 #include "OrcaAstVisitor.h"
 #include "OrcaError.h"
+#include "OrcaLLVMBuilder.h"
 #include "OrcaLexerErrorListener.h"
 #include "OrcaScope.h"
 #include "OrcaType.h"
@@ -23,7 +25,7 @@ class OrcaCodeGen : public OrcaAstVisitor {
 public:
   OrcaCodeGen(OrcaContext &context) : compileContext(context) {
     llvmContext = std::make_unique<llvm::LLVMContext>();
-    builder = std::make_unique<llvm::IRBuilder<>>(*llvmContext);
+    builder = std::make_unique<OrcaLLVMBuilder>(*llvmContext);
     module = std::make_unique<llvm::Module>("Orca", *llvmContext);
   };
 
@@ -126,7 +128,7 @@ public:
   }
 
   std::unique_ptr<llvm::LLVMContext> llvmContext;
-  std::unique_ptr<llvm::IRBuilder<>> builder;
+  std::unique_ptr<OrcaLLVMBuilder> builder;
   std::unique_ptr<llvm::Module> module;
 
   OrcaScope<llvm::AllocaInst *> *namedValues =

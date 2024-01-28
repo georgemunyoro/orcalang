@@ -308,6 +308,21 @@ class OrcaTypeChecker : OrcaAstVisitor {
     if (exprType->is(OrcaTypeKind::Integer)) {
       switch (type->getKind()) {
       case OrcaTypeKind::Integer:
+      case OrcaTypeKind::Boolean:
+      case OrcaTypeKind::Char:
+      case OrcaTypeKind::Float:
+        node->evaluatedType = type;
+        return std::any(node->evaluatedType);
+      default:
+        break;
+      }
+    }
+
+    if (exprType->is(OrcaTypeKind::Boolean)) {
+      switch (type->getKind()) {
+      case OrcaTypeKind::Integer:
+      case OrcaTypeKind::Boolean:
+      case OrcaTypeKind::Char:
       case OrcaTypeKind::Float:
         node->evaluatedType = type;
         return std::any(node->evaluatedType);
