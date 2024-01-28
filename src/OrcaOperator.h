@@ -205,6 +205,36 @@ protected:
   static OrcaDivisionOperator *instance;
 };
 
+/**
+ * @brief OrcaLogicalAndOperator is used to represent the logical and operator
+ * in the Orca language.
+ */
+class OrcaLogicalAndOperator : public OrcaBinaryOperator {
+public:
+  OrcaLogicalAndOperator() {
+    opSymbol = "&&";
+    instance = this;
+  }
+  ~OrcaLogicalAndOperator() = default;
+
+  OrcaType *getResultingType(OrcaType *left, OrcaType *right) override;
+
+  llvm::Value *codegen(std::unique_ptr<llvm::IRBuilder<>> &builder,
+                       llvm::Value *lhs, llvm::Value *rhs) override;
+
+  /**
+   * @brief Get the instance of the OrcaLogicalAndOperator.
+   */
+  static OrcaLogicalAndOperator *getInstance() {
+    if (instance == nullptr)
+      instance = new OrcaLogicalAndOperator();
+    return instance;
+  };
+
+protected:
+  static OrcaLogicalAndOperator *instance;
+};
+
 // ======================================================================
 // =========================== Unary Operators ==========================
 // ======================================================================

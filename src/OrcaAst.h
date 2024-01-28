@@ -191,6 +191,8 @@ public:
       op = OrcaDivisionOperator::getInstance();
     else if (opSymbol == "*")
       op = OrcaMultiplicationOperator::getInstance();
+    else if (opSymbol == "&&")
+      op = OrcaLogicalAndOperator::getInstance();
 
     // } else if (op == "*") {
     //   op = OrcaBinaryOperator::Multiply;
@@ -873,6 +875,8 @@ public:
     return std::string(indent, ' ') + "BooleanLiteralExpressionNode " + KGRN +
            (value ? "true" : "false") + KNRM + "\n";
   }
+
+  bool getValue() const { return value; }
 
 private:
   bool value;

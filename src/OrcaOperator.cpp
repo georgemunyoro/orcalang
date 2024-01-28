@@ -1,5 +1,6 @@
 #include "OrcaOperator.h"
 #include "OrcaType.h"
+#include <stdexcept>
 
 // =======================================================================
 // =========================== Binary Operators ==========================
@@ -142,6 +143,53 @@ llvm::Value *
 OrcaDivisionOperator::codegen(std::unique_ptr<llvm::IRBuilder<>> &builder,
                               llvm::Value *lhs, llvm::Value *rhs) {
   return builder->CreateSDiv(lhs, rhs);
+}
+
+OrcaLogicalAndOperator *OrcaLogicalAndOperator::instance = nullptr;
+
+OrcaType *OrcaLogicalAndOperator::getResultingType(OrcaType *lhs,
+                                                   OrcaType *rhs) {
+  auto lKind = lhs->getKind();
+  auto rKind = rhs->getKind();
+
+  if (lKind == OrcaTypeKind::Integer) {
+    if (lKind != rKind)
+      throw std::string("Cannot logical and integer with non-integer type");
+
+    auto lInt = lhs->getIntegerType();
+    auto rInt = rhs->getIntegerType();
+
+    if (lInt.getIsSigned() != rInt.getIsSigned())
+      throw std::string("Cannot logical and integers of different signedness");
+
+    if (lInt.getBits() != rInt.getBits())
+      throw std::string("Cannot logical and integers of different sizes");
+
+    return lhs;
+  }
+
+  if (lKind == OrcaTypeKind::Boolean) {
+    if (lKind != rKind)
+      throw std::string("Cannot logical and boolean with non-boolean type");
+
+    return lhs;
+  }
+
+  throw std::string("Cannot logical and non-boolean types");
+}
+
+llvm::Value *
+OrcaLogicalAndOperator::codegen(std::unique_ptr<llvm::IRBuilder<>> &builder,
+                                llvm::Value *lhs, llvm::Value *rhs) {
+  // In order to implement short-circuiting, we actually use a select
+  // instruction instead of a logical and instruction. This is because the
+  // select instruction will only evaluate the second operand if the first
+  // operand is true.
+  //
+  // You can think of the select instruction as a ternary operator. e.g.
+  // foo && bar is equivalent to foo ? bar : false
+
+  return builder->CreateSelect(lhs, rhs, builder->getInt1(false));
 }
 
 // ======================================================================

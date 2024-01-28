@@ -150,3 +150,10 @@ std::any OrcaCodeGen::visitCastExpression(OrcaAstCastExpressionNode *node) {
                   node->parseContext->getStart()->getLine(),
                   node->parseContext->getStart()->getCharPositionInLine());
 }
+
+std::any OrcaCodeGen::visitBooleanLiteralExpression(
+    OrcaAstBooleanLiteralExpressionNode *node) {
+  // Booleans are represented as 1 bit unsigned integers
+  return (llvm::Value *)llvm::ConstantInt::get(
+      *llvmContext, llvm::APInt(1, node->getValue()));
+}

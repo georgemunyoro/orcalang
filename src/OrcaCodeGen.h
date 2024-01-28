@@ -82,10 +82,10 @@ public:
       OrcaAstStringLiteralExpressionNode *node) override {
     throw "TODO";
   };
+
   std::any visitBooleanLiteralExpression(
-      OrcaAstBooleanLiteralExpressionNode *node) override {
-    throw "TODO";
-  };
+      OrcaAstBooleanLiteralExpressionNode *node) override;
+
   std::any
   visitExpressionStatement(OrcaAstExpressionStatementNode *node) override {
     throw "TODO";
@@ -111,6 +111,9 @@ public:
       return llvm::FunctionType::get(generateType(functionType.getReturnType()),
                                      parameterTypes, false);
     }
+
+    case OrcaTypeKind::Boolean:
+      return llvm::Type::getInt1Ty(*llvmContext);
 
     default:
       throw "TODO";
