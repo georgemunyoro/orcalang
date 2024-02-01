@@ -229,14 +229,14 @@ std::any OrcaCodeGen::visitLetExpression(OrcaAstLetExpressionNode *node) {
 
 std::any
 OrcaCodeGen::visitIdentifierExpression(OrcaAstIdentifierExpressionNode *node) {
-  // Get the variable from the scope
-  llvm::AllocaInst *alloca = *namedValues->get(node->getName());
-
-  if (alloca == nullptr)
+  if (!namedValues->isInScope(node->getName()))
     throw OrcaError(compileContext,
                     "Variable '" + node->getName() + "' not declared.",
                     node->parseContext->getStart()->getLine(),
                     node->parseContext->getStart()->getCharPositionInLine());
+
+  // Get the variable from the scope
+  llvm::AllocaInst *alloca = *namedValues->get(node->getName());
 
   return (llvm::Value *)builder->CreateLoad(alloca->getAllocatedType(), alloca);
 }
