@@ -169,6 +169,9 @@ public:
     case OrcaTypeKind::Boolean:
       return llvm::Type::getInt1Ty(*llvmContext);
 
+    case OrcaTypeKind::Void:
+      return llvm::Type::getVoidTy(*llvmContext);
+
     default:
       throw "TODO";
     }
