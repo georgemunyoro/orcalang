@@ -56,7 +56,7 @@ public:
    * @return true If the symbol exists.
    * @return false If the symbol does not exist.
    */
-  void isInScope(const std::string &name) { return get(name) != nullptr; }
+  bool isInScope(const std::string &name) { return get(name) != nullptr; }
 
   /**
    * @brief Get the parent scope.
