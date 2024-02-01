@@ -1,5 +1,5 @@
 func main() -> u32 {
     let a: u32 = 0;
-    a || (a = 3) || (a = 4);
-    return a;
+    a != 0 || (a = 3) != 0 || (a = 4) != 0;
+    return a; // 3
 }
