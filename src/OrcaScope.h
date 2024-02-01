@@ -45,7 +45,7 @@ public:
    * @return true If the symbol exists.
    * @return false If the symbol does not exist.
    */
-  void isInImmediateScope(const std::string &name) {
+  bool isInImmediateScope(const std::string &name) {
     return symbols.find(name) != symbols.end();
   }
 

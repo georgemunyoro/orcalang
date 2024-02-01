@@ -1,4 +1,5 @@
 #include "Sub.h"
+#include "../../OrcaAst.h"
 #include "../../OrcaCodeGen.h"
 
 namespace orca {
@@ -28,9 +29,12 @@ OrcaType *SubOperator::getResultingType(OrcaType *lhs, OrcaType *rhs) {
   throw std::string("Cannot subtract non-integer types");
 }
 
-llvm::Value *SubOperator::codegen(OrcaCodeGen &cg, llvm::Value *lhs,
-                                  llvm::Value *rhs) {
-  return cg.builder->CreateSub(lhs, rhs);
+llvm::Value *SubOperator::codegen(OrcaCodeGen &cg, OrcaAstExpressionNode *lhs,
+                                  OrcaAstExpressionNode *rhs) {
+  auto lhsVal = std::any_cast<llvm::Value *>(lhs->accept(cg));
+  auto rhsVal = std::any_cast<llvm::Value *>(rhs->accept(cg));
+
+  return cg.builder->CreateSub(lhsVal, rhsVal);
 }
 
 } // namespace orca

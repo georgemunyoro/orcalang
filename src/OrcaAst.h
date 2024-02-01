@@ -8,10 +8,17 @@
 #include "./utils/printfColors.h"
 
 #include "Operator/Binary/Add.h"
+#include "Operator/Binary/Assign.h"
 #include "Operator/Binary/Binary.h"
 #include "Operator/Binary/CmpEQ.h"
+#include "Operator/Binary/CmpGE.h"
+#include "Operator/Binary/CmpGT.h"
+#include "Operator/Binary/CmpLE.h"
+#include "Operator/Binary/CmpLT.h"
+#include "Operator/Binary/CmpNE.h"
 #include "Operator/Binary/Div.h"
 #include "Operator/Binary/LogicalAnd.h"
+#include "Operator/Binary/LogicalOr.h"
 #include "Operator/Binary/Mul.h"
 #include "Operator/Binary/Sub.h"
 
@@ -141,6 +148,8 @@ public:
            KNRM + " " + contextString() + "\n" + type->toString(indent + 2);
   }
 
+  std::string getName() const { return name; }
+
 private:
   std::string name;
   OrcaAstTypeNode *type;
@@ -204,8 +213,22 @@ public:
       op = orca::MulOperator::getInstance();
     else if (opSymbol == "&&")
       op = orca::LogicalAndOperator::getInstance();
+    else if (opSymbol == "||")
+      op = orca::LogicalOrOperator::getInstance();
     else if (opSymbol == "==")
       op = orca::CmpEQOperator::getInstance();
+    else if (opSymbol == ">=")
+      op = orca::CmpGEOperator::getInstance();
+    else if (opSymbol == ">")
+      op = orca::CmpGTOperator::getInstance();
+    else if (opSymbol == "<=")
+      op = orca::CmpLEOperator::getInstance();
+    else if (opSymbol == "<")
+      op = orca::CmpLTOperator::getInstance();
+    else if (opSymbol == "!=")
+      op = orca::CmpNEOperator::getInstance();
+    else if (opSymbol == "=")
+      op = orca::AssignOperator::getInstance();
 
     // } else if (op == "*") {
     //   op = OrcaBinaryOperator::Multiply;

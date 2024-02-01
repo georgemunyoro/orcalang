@@ -1,4 +1,5 @@
 #include "Mul.h"
+#include "../../OrcaAst.h"
 #include "../../OrcaCodeGen.h"
 
 namespace orca {
@@ -28,9 +29,12 @@ OrcaType *MulOperator::getResultingType(OrcaType *lhs, OrcaType *rhs) {
   throw std::string("Cannot multiply non-integer types");
 }
 
-llvm::Value *MulOperator::codegen(OrcaCodeGen &cg, llvm::Value *lhs,
-                                  llvm::Value *rhs) {
-  return cg.builder->CreateMul(lhs, rhs);
+llvm::Value *MulOperator::codegen(OrcaCodeGen &cg, OrcaAstExpressionNode *lhs,
+                                  OrcaAstExpressionNode *rhs) {
+  auto lhsVal = std::any_cast<llvm::Value *>(lhs->accept(cg));
+  auto rhsVal = std::any_cast<llvm::Value *>(rhs->accept(cg));
+
+  return cg.builder->CreateMul(lhsVal, rhsVal);
 }
 
 } // namespace orca

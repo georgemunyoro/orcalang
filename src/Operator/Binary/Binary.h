@@ -3,6 +3,8 @@
 #include "../Operator.h"
 #include "llvm/IR/Value.h"
 
+class OrcaAstExpressionNode;
+
 namespace orca {
 
 class BinaryOperator : public Operator {
@@ -12,8 +14,8 @@ public:
   virtual OrcaType *getResultingType(OrcaType *left,
                                      OrcaType *right) override = 0;
 
-  virtual llvm::Value *codegen(OrcaCodeGen &cg, llvm::Value *lhs,
-                               llvm::Value *rhs) = 0;
+  virtual llvm::Value *codegen(OrcaCodeGen &cg, OrcaAstExpressionNode *lhs,
+                               OrcaAstExpressionNode *rhs) = 0;
 
   /**
    * @brief This will throw an exception, as this is a binary operator.

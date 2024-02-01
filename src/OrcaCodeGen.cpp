@@ -4,6 +4,7 @@
 #include "OrcaScope.h"
 #include "OrcaType.h"
 #include <any>
+#include <cstdlib>
 
 std::any OrcaCodeGen::visitProgram(OrcaAstProgramNode *node) {
   for (auto &node : node->getNodes())
@@ -64,6 +65,12 @@ std::any OrcaCodeGen::visitFunctionDeclarationStatement(
     builder->CreateRetVoid();
   }
 
+  // Validate the function
+  llvm::verifyFunction(*function);
+
+  // Optimize the function
+  fpm->run(*function, *fam);
+
   // Leave the scope
   namedValues = namedValues->getParent();
 
@@ -109,12 +116,7 @@ std::any OrcaCodeGen::visitUnaryExpression(OrcaAstUnaryExpressionNode *node) {
 };
 
 std::any OrcaCodeGen::visitBinaryExpression(OrcaAstBinaryExpressionNode *node) {
-  llvm::Value *lhs =
-      std::any_cast<llvm::Value *>(node->getLhs()->accept(*this));
-  llvm::Value *rhs =
-      std::any_cast<llvm::Value *>(node->getRhs()->accept(*this));
-
-  return node->getOperator()->codegen(*this, lhs, rhs);
+  return node->getOperator()->codegen(*this, node->getLhs(), node->getRhs());
 };
 
 std::any OrcaCodeGen::visitCastExpression(OrcaAstCastExpressionNode *node) {
@@ -124,12 +126,10 @@ std::any OrcaCodeGen::visitCastExpression(OrcaAstCastExpressionNode *node) {
   OrcaType *fromType = node->getExpr()->evaluatedType;
   OrcaType *toType = node->evaluatedType;
 
-  if (toType->is(OrcaTypeKind::Integer)) {
-    switch (fromType->getKind()) {
-    case OrcaTypeKind::Integer:
-    case OrcaTypeKind::Boolean:
-    case OrcaTypeKind::Char:
-    case OrcaTypeKind::Float: {
+  if (fromType->is(OrcaTypeKind::Integer)) {
+    switch (toType->getKind()) {
+
+    case OrcaTypeKind::Integer: {
       if (fromType->sizeOf() < toType->sizeOf())
         return builder->CreateSExt(operand, generateType(toType));
 
@@ -139,9 +139,17 @@ std::any OrcaCodeGen::visitCastExpression(OrcaAstCastExpressionNode *node) {
       return builder->CreateBitCast(operand, generateType(toType));
     }
 
-    case OrcaTypeKind::Pointer: {
-      return builder->CreatePtrToInt(operand,
-                                     generateType(node->evaluatedType));
+    default:
+      break;
+    }
+  }
+
+  if (fromType->is(OrcaTypeKind::Boolean)) {
+    switch (toType->getKind()) {
+    case OrcaTypeKind::Integer: {
+      auto bitSize = toType->getIntegerType().getBits();
+      return builder->CreateZExt(operand,
+                                 llvm::IntegerType::get(*llvmContext, bitSize));
     }
 
     default:
@@ -162,4 +170,73 @@ std::any OrcaCodeGen::visitBooleanLiteralExpression(
   // Booleans are represented as 1 bit unsigned integers
   return (llvm::Value *)llvm::ConstantInt::get(
       *llvmContext, llvm::APInt(1, node->getValue()));
+}
+
+std::any
+OrcaCodeGen::visitExpressionStatement(OrcaAstExpressionStatementNode *node) {
+  return node->expr->accept(*this);
+}
+
+std::any
+OrcaCodeGen::visitAssignmentExpression(OrcaAstAssignmentExpressionNode *node) {
+  llvm::Value *value =
+      std::any_cast<llvm::Value *>(node->getRhs()->accept(*this));
+  llvm::Value *assignee =
+      std::any_cast<llvm::Value *>(node->getLhs()->accept(*this));
+
+  if (llvm::isa<llvm::LoadInst>(assignee)) {
+    llvm::LoadInst *loadInst = llvm::cast<llvm::LoadInst>(assignee);
+    builder->CreateStore(value, loadInst->getPointerOperand());
+    return value;
+  }
+
+  builder->CreateStore(value, assignee);
+  return value;
+};
+
+std::any OrcaCodeGen::visitLetExpression(OrcaAstLetExpressionNode *node) {
+  // If we're in a function, we allocate space for the variable
+  // in the function's entry block. Otherwise, we have a global
+  // variable.
+
+  if (!builder->GetInsertBlock())
+    throw OrcaError(compileContext,
+                    "Global variables are not supported yet. This is a bug.",
+                    node->parseContext->getStart()->getLine(),
+                    node->parseContext->getStart()->getCharPositionInLine());
+
+  if (namedValues->isInImmediateScope(node->getName()))
+    throw OrcaError(compileContext,
+                    "Variable '" + node->getName() +
+                        "' already declared in this scope.",
+                    node->parseContext->getStart()->getLine(),
+                    node->parseContext->getStart()->getCharPositionInLine());
+
+  // Get the current function
+  llvm::Function *currentFunction = builder->GetInsertBlock()->getParent();
+
+  llvm::IRBuilder<> tmpBuilder(&currentFunction->getEntryBlock(),
+                               currentFunction->getEntryBlock().begin());
+
+  // Allocate space for the variable in the entry block
+  llvm::AllocaInst *alloca = tmpBuilder.CreateAlloca(
+      generateType(node->evaluatedType), nullptr, node->getName());
+
+  namedValues->set(node->getName(), alloca);
+
+  return (llvm::Value *)alloca;
+}
+
+std::any
+OrcaCodeGen::visitIdentifierExpression(OrcaAstIdentifierExpressionNode *node) {
+  // Get the variable from the scope
+  llvm::AllocaInst *alloca = *namedValues->get(node->getName());
+
+  if (alloca == nullptr)
+    throw OrcaError(compileContext,
+                    "Variable '" + node->getName() + "' not declared.",
+                    node->parseContext->getStart()->getLine(),
+                    node->parseContext->getStart()->getCharPositionInLine());
+
+  return (llvm::Value *)builder->CreateLoad(alloca->getAllocatedType(), alloca);
 }

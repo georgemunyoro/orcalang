@@ -1,13 +1,13 @@
-#include "CmpEQ.h"
+#include "CmpNE.h"
 #include "../../OrcaAst.h"
 #include "../../OrcaCodeGen.h"
 #include "Binary.h"
 
 namespace orca {
 
-CmpEQOperator *CmpEQOperator::instance = nullptr;
+CmpNEOperator *CmpNEOperator::instance = nullptr;
 
-OrcaType *CmpEQOperator::getResultingType(OrcaType *lhs, OrcaType *rhs) {
+OrcaType *CmpNEOperator::getResultingType(OrcaType *lhs, OrcaType *rhs) {
   auto lKind = lhs->getKind();
   auto rKind = rhs->getKind();
 
@@ -39,12 +39,12 @@ OrcaType *CmpEQOperator::getResultingType(OrcaType *lhs, OrcaType *rhs) {
                     rhs->toString() + "'");
 }
 
-llvm::Value *CmpEQOperator::codegen(OrcaCodeGen &cg, OrcaAstExpressionNode *lhs,
+llvm::Value *CmpNEOperator::codegen(OrcaCodeGen &cg, OrcaAstExpressionNode *lhs,
                                     OrcaAstExpressionNode *rhs) {
   auto lhsVal = std::any_cast<llvm::Value *>(lhs->accept(cg));
   auto rhsVal = std::any_cast<llvm::Value *>(rhs->accept(cg));
 
-  return cg.builder->CreateICmpEQ(lhsVal, rhsVal);
+  return cg.builder->CreateICmpNE(lhsVal, rhsVal);
 }
 
 } // namespace orca

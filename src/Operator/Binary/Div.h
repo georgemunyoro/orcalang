@@ -19,8 +19,8 @@ public:
 
   OrcaType *getResultingType(OrcaType *left, OrcaType *right) override;
 
-  llvm::Value *codegen(OrcaCodeGen &cg, llvm::Value *lhs,
-                       llvm::Value *rhs) override;
+  llvm::Value *codegen(OrcaCodeGen &cg, OrcaAstExpressionNode *lhs,
+                       OrcaAstExpressionNode *rhs) override;
 
   /**
    * @brief Get the instance of the OrcaDivisionOperator.

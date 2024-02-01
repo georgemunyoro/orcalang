@@ -1,17 +1,16 @@
 #pragma once
 
-#include "../Operator.h"
 #include "Binary.h"
 
 namespace orca {
 
-class MulOperator : public BinaryOperator {
+class CmpGEOperator : public BinaryOperator {
 public:
-  MulOperator() {
-    opSymbol = "*";
+  CmpGEOperator() {
+    opSymbol = ">=";
     instance = this;
   }
-  ~MulOperator() = default;
+  ~CmpGEOperator() = default;
 
   OrcaType *getResultingType(OrcaType *left, OrcaType *right) override;
 
@@ -19,16 +18,16 @@ public:
                        OrcaAstExpressionNode *rhs) override;
 
   /**
-   * @brief Get the instance of the OrcaMultiplicationOperator.
+   * @brief Get the instance of the OrcaGEOperator.
    */
-  static MulOperator *getInstance() {
+  static CmpGEOperator *getInstance() {
     if (instance == nullptr)
-      instance = new MulOperator();
+      instance = new CmpGEOperator();
     return instance;
   };
 
 protected:
-  static MulOperator *instance;
+  static CmpGEOperator *instance;
 };
 
 } // namespace orca

@@ -1,15 +1,37 @@
 #pragma once
 
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Instructions.h"
 #include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
-#include "llvm/IR/NoFolder.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/MC/TargetRegistry.h"
+#include "llvm/Passes/PassBuilder.h"
+#include "llvm/Passes/StandardInstrumentations.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Host.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/Target/TargetIntrinsicInfo.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/Target/TargetOptions.h"
+#include "llvm/Transforms/InstCombine/InstCombine.h"
+#include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/Scalar/GVN.h"
+#include "llvm/Transforms/Scalar/Reassociate.h"
+#include "llvm/Transforms/Scalar/SimplifyCFG.h"
+#include "llvm/Transforms/Utils.h"
+
 #include <memory>
+#include <stdexcept>
 
 #include "OrcaAst.h"
 #include "OrcaAstVisitor.h"
@@ -27,20 +49,53 @@ public:
     llvmContext = std::make_unique<llvm::LLVMContext>();
     builder = std::make_unique<OrcaLLVMBuilder>(*llvmContext);
     module = std::make_unique<llvm::Module>("Orca", *llvmContext);
+
+    // Instrumentation
+    pic = std::make_unique<llvm::PassInstrumentationCallbacks>();
+    si = std::make_unique<llvm::StandardInstrumentations>(true);
+
+    si->registerCallbacks(*pic, fam.get());
+
+    // Initialize the pass managers
+    fpm = std::make_unique<llvm::FunctionPassManager>();
+
+    // Initialize the analysis managers
+    fam = std::make_unique<llvm::FunctionAnalysisManager>();
+    mam = std::make_unique<llvm::ModuleAnalysisManager>();
+    cgam = std::make_unique<llvm::CGSCCAnalysisManager>();
+    lam = std::make_unique<llvm::LoopAnalysisManager>();
+
+    // Simple peephole and bit-twiddling optimizations.
+    fpm->addPass(llvm::InstCombinePass());
+    // Reassociate expressions.
+    fpm->addPass(llvm::ReassociatePass());
+    // Eliminate Common SubExpressions.
+    fpm->addPass(llvm::GVNPass());
+    // Simplify the control flow graph (deleting unreachable blocks, etc).
+    fpm->addPass(llvm::SimplifyCFGPass());
+
+    // Promote allocas to registers.
+    // fpm->addPass(llvm::createPromoteMemoryToRegisterPass());
+    // peephole optimizations and bit-twiddling optimizations
+    // fpm->addPass(llvm::createInstructionCombiningPass());
+    // reassociate expressions
+    // fpm->addPass(llvm::createReassociatePass());
+
+    llvm::PassBuilder pb;
+    pb.registerModuleAnalyses(*mam);
+    pb.registerFunctionAnalyses(*fam);
+    pb.crossRegisterProxies(*lam, *fam, *cgam, *mam);
   };
 
   ~OrcaCodeGen() = default;
 
-  std::any visitLetExpression(OrcaAstLetExpressionNode *node) override {
-    throw "TODO";
-  };
+  std::any visitLetExpression(OrcaAstLetExpressionNode *node) override;
 
   std::any visitProgram(OrcaAstProgramNode *node) override;
 
   std::any
-  visitAssignmentExpression(OrcaAstAssignmentExpressionNode *node) override {
-    throw "TODO";
-  };
+  visitAssignmentExpression(OrcaAstAssignmentExpressionNode *node) override;
+
   std::any
   visitConditionalExpression(OrcaAstConditionalExpressionNode *node) override {
     throw "TODO";
@@ -70,9 +125,8 @@ public:
   std::any visitBinaryExpression(OrcaAstBinaryExpressionNode *node) override;
 
   std::any
-  visitIdentifierExpression(OrcaAstIdentifierExpressionNode *node) override {
-    throw "TODO";
-  };
+  visitIdentifierExpression(OrcaAstIdentifierExpressionNode *node) override;
+
   std::any visitIntegerLiteralExpression(
       OrcaAstIntegerLiteralExpressionNode *node) override;
 
@@ -89,9 +143,7 @@ public:
       OrcaAstBooleanLiteralExpressionNode *node) override;
 
   std::any
-  visitExpressionStatement(OrcaAstExpressionStatementNode *node) override {
-    throw "TODO";
-  };
+  visitExpressionStatement(OrcaAstExpressionStatementNode *node) override;
 
   std::any visitCastExpression(OrcaAstCastExpressionNode *node) override;
 
@@ -123,13 +175,88 @@ public:
   }
 
   void generateCode(OrcaAstProgramNode *node) {
-    node->accept(*this);
-    llvm::verifyModule(*module, &llvm::errs());
+    try {
+      node->accept(*this);
+      llvm::verifyModule(*module, &llvm::errs());
+
+      // TODO: Move this into it's own module. This isn't scalable,
+      // and doesn't allow for multiple compilation units. We need to
+      // be able to link multiple modules together.
+
+      std::string TargetTriple = llvm::sys::getDefaultTargetTriple();
+
+      llvm::InitializeAllTargetInfos();
+      llvm::InitializeAllTargets();
+      llvm::InitializeAllTargetMCs();
+      llvm::InitializeAllAsmParsers();
+      llvm::InitializeAllAsmPrinters();
+
+      std::string Error;
+      auto Target = llvm::TargetRegistry::lookupTarget(TargetTriple, Error);
+
+      if (!Target) {
+        llvm::errs() << Error;
+        throw std::runtime_error("Failed to lookup target");
+      }
+
+      auto CPU = "generic";
+      auto Features = "";
+
+      llvm::TargetOptions opt;
+      auto TargetMachine = Target->createTargetMachine(
+          TargetTriple, CPU, Features, opt, llvm::Reloc::PIC_);
+
+      this->module->setDataLayout(TargetMachine->createDataLayout());
+      this->module->setTargetTriple(TargetTriple);
+
+      auto Filename = "output.o";
+      std::error_code EC;
+      llvm::raw_fd_ostream dest(Filename, EC, llvm::sys::fs::OF_None);
+
+      if (EC) {
+        llvm::errs() << "Could not open file: " << EC.message();
+        throw std::runtime_error("Failed to open file");
+      }
+
+      llvm::legacy::PassManager pass;
+      auto FileType = llvm::CodeGenFileType::CGFT_ObjectFile;
+
+      if (TargetMachine->addPassesToEmitFile(pass, dest, nullptr, FileType)) {
+        llvm::errs() << "TargetMachine can't emit a file of this type";
+        throw std::runtime_error("Failed to emit file");
+      }
+
+      pass.run(*this->module);
+      dest.flush();
+
+      // Convert the object file into an executable
+      std::string LinkerCommand = "clang++ -o output output.o";
+      if (std::system(LinkerCommand.c_str()) == -1) {
+        throw std::runtime_error("Failed to link object file");
+      }
+
+      printf("Successfully compiled\n");
+
+    } catch (OrcaError &error) {
+      error.print();
+    }
   }
 
   std::unique_ptr<llvm::LLVMContext> llvmContext;
   std::unique_ptr<OrcaLLVMBuilder> builder;
   std::unique_ptr<llvm::Module> module;
+
+  std::unique_ptr<llvm::StandardInstrumentations> si;
+  std::unique_ptr<llvm::PassInstrumentationCallbacks> pic;
+
+  // Pass managers
+  std::unique_ptr<llvm::FunctionPassManager> fpm;
+
+  // Analysis managers
+  std::unique_ptr<llvm::FunctionAnalysisManager> fam;
+  std::unique_ptr<llvm::ModuleAnalysisManager> mam;
+  std::unique_ptr<llvm::CGSCCAnalysisManager> cgam;
+  std::unique_ptr<llvm::LoopAnalysisManager> lam;
 
   OrcaScope<llvm::AllocaInst *> *namedValues =
       new OrcaScope<llvm::AllocaInst *>();

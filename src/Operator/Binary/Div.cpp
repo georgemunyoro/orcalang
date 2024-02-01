@@ -1,5 +1,7 @@
 #include "Div.h"
+#include "../../OrcaAst.h"
 #include "../../OrcaCodeGen.h"
+#include "Binary.h"
 
 namespace orca {
 
@@ -41,9 +43,12 @@ OrcaType *DivOperator::getResultingType(OrcaType *lhs, OrcaType *rhs) {
   throw std::string("Cannot divide non-numeric types");
 }
 
-llvm::Value *DivOperator::codegen(OrcaCodeGen &cg, llvm::Value *lhs,
-                                  llvm::Value *rhs) {
-  return cg.builder->CreateSDiv(lhs, rhs);
+llvm::Value *DivOperator::codegen(OrcaCodeGen &cg, OrcaAstExpressionNode *lhs,
+                                  OrcaAstExpressionNode *rhs) {
+  auto lhsVal = std::any_cast<llvm::Value *>(lhs->accept(cg));
+  auto rhsVal = std::any_cast<llvm::Value *>(rhs->accept(cg));
+
+  return cg.builder->CreateSDiv(lhsVal, rhsVal);
 }
 
 } // namespace orca

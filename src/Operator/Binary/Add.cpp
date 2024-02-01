@@ -1,5 +1,7 @@
 #include "Add.h"
+#include "../../OrcaAst.h"
 #include "../../OrcaCodeGen.h"
+#include "Binary.h"
 
 namespace orca {
 
@@ -9,28 +11,68 @@ OrcaType *AddOperator::getResultingType(OrcaType *lhs, OrcaType *rhs) {
   auto lKind = lhs->getKind();
   auto rKind = rhs->getKind();
 
-  if (lKind == OrcaTypeKind::Integer) {
-    if (lKind != rKind)
-      throw std::string("Cannot add integer to non-integer type");
+  if (lhs->is(OrcaTypeKind::Integer)) {
+    auto lhsInt = lhs->getIntegerType();
 
-    auto lInt = lhs->getIntegerType();
-    auto rInt = rhs->getIntegerType();
+    switch (rKind) {
 
-    if (lInt.getIsSigned() != rInt.getIsSigned())
-      throw std::string("Cannot add integers of different signedness");
+    // iX + iY = uZ where Z = max(X, Y)
+    // uX + uX = uX
+    // sX + sX = sX
+    // uX + sX = sX
+    case OrcaTypeKind::Integer: {
+      auto rhsInt = rhs->getIntegerType();
 
-    if (lInt.getBits() != rInt.getBits())
-      throw std::string("Cannot add integers of different sizes");
+      size_t largerBitSize = std::max(lhs->getIntegerType().getBits(),
+                                      rhs->getIntegerType().getBits());
 
-    return lhs;
+      return new OrcaType(OrcaIntegerType(
+          lhsInt.getIsSigned() || rhsInt.getIsSigned(), largerBitSize));
+    }
+
+    // int + float = float
+    case OrcaTypeKind::Float:
+      return rhs;
+
+    default:
+      break;
+    }
   }
 
-  throw std::string("Cannot add non-integer types");
+  if (lhs->is(OrcaTypeKind::Float)) {
+    auto lhsFloat = lhs->getFloatType();
+
+    switch (rKind) {
+
+    // float + float = float
+    case OrcaTypeKind::Float: {
+      auto rhsFloat = rhs->getFloatType();
+
+      size_t largerBitSize = std::max(lhs->getFloatType().getBits(),
+                                      rhs->getFloatType().getBits());
+
+      return new OrcaType(OrcaFloatType(largerBitSize));
+    }
+
+    // float + int = float
+    case OrcaTypeKind::Integer:
+      return lhs;
+
+    default:
+      break;
+    }
+  }
+
+  throw std::string("Cannot add types '" + lhs->toString() + "' and '" +
+                    rhs->toString() + "'.");
 }
 
-llvm::Value *AddOperator::codegen(OrcaCodeGen &cg, llvm::Value *lhs,
-                                  llvm::Value *rhs) {
-  return cg.builder->CreateAdd(lhs, rhs);
+llvm::Value *AddOperator::codegen(OrcaCodeGen &cg, OrcaAstExpressionNode *lhs,
+                                  OrcaAstExpressionNode *rhs) {
+  auto lhsVal = std::any_cast<llvm::Value *>(lhs->accept(cg));
+  auto rhsVal = std::any_cast<llvm::Value *>(rhs->accept(cg));
+
+  return cg.builder->CreateAdd(lhsVal, rhsVal);
 }
 
 } // namespace orca

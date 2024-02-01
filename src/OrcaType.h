@@ -279,6 +279,54 @@ public:
     }
   }
 
+  OrcaPointerType getPointerType() const {
+    if (kind == OrcaTypeKind::Pointer) {
+      return pointerType;
+    } else {
+      throw std::runtime_error("Type is not a pointer type.");
+    }
+  }
+
+  OrcaArrayType getArrayType() const {
+    if (kind == OrcaTypeKind::Array) {
+      return arrayType;
+    } else {
+      throw std::runtime_error("Type is not an array type.");
+    }
+  }
+
+  OrcaStructType getStructType() const {
+    if (kind == OrcaTypeKind::Struct) {
+      return structType;
+    } else {
+      throw std::runtime_error("Type is not a struct type.");
+    }
+  }
+
+  OrcaBooleanType getBooleanType() const {
+    if (kind == OrcaTypeKind::Boolean) {
+      return booleanType;
+    } else {
+      throw std::runtime_error("Type is not a boolean type.");
+    }
+  }
+
+  OrcaCharType getCharType() const {
+    if (kind == OrcaTypeKind::Char) {
+      return charType;
+    } else {
+      throw std::runtime_error("Type is not a char type.");
+    }
+  }
+
+  OrcaVoidType getVoidType() const {
+    if (kind == OrcaTypeKind::Void) {
+      return voidType;
+    } else {
+      throw std::runtime_error("Type is not a void type.");
+    }
+  }
+
   bool isEqual(OrcaType *other) {
     if (kind != other->kind) {
       return false;
@@ -348,6 +396,23 @@ public:
   }
 
   bool is(OrcaTypeKind kind) { return this->kind == kind; }
+
+  static OrcaIntegerType u8;
+  static OrcaIntegerType u16;
+  static OrcaIntegerType u32;
+  static OrcaIntegerType u64;
+
+  static OrcaIntegerType s8;
+  static OrcaIntegerType s16;
+  static OrcaIntegerType s32;
+  static OrcaIntegerType s64;
+
+  static OrcaFloatType f32;
+  static OrcaFloatType f64;
+
+  static OrcaBooleanType boolean;
+  static OrcaCharType _char;
+  static OrcaVoidType _void;
 
 private:
   OrcaTypeKind kind;

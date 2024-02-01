@@ -1,13 +1,16 @@
-#include "LogicalAnd.h"
+#include "LogicalOr.h"
 #include "../../OrcaAst.h"
 #include "../../OrcaCodeGen.h"
 #include "Binary.h"
 
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Function.h"
+
 namespace orca {
 
-LogicalAndOperator *LogicalAndOperator::instance = nullptr;
+LogicalOrOperator *LogicalOrOperator::instance = nullptr;
 
-OrcaType *LogicalAndOperator::getResultingType(OrcaType *lhs, OrcaType *rhs) {
+OrcaType *LogicalOrOperator::getResultingType(OrcaType *lhs, OrcaType *rhs) {
   auto lKind = lhs->getKind();
   auto rKind = rhs->getKind();
 
@@ -21,9 +24,9 @@ OrcaType *LogicalAndOperator::getResultingType(OrcaType *lhs, OrcaType *rhs) {
   throw std::string("Cannot logical and non-boolean types");
 }
 
-llvm::Value *LogicalAndOperator::codegen(OrcaCodeGen &cg,
-                                         OrcaAstExpressionNode *lhs,
-                                         OrcaAstExpressionNode *rhs) {
+llvm::Value *LogicalOrOperator::codegen(OrcaCodeGen &cg,
+                                        OrcaAstExpressionNode *lhs,
+                                        OrcaAstExpressionNode *rhs) {
 
   auto lhsVal = std::any_cast<llvm::Value *>(lhs->accept(cg));
 
@@ -45,7 +48,7 @@ llvm::Value *LogicalAndOperator::codegen(OrcaCodeGen &cg,
       llvm::BasicBlock::Create(*cg.llvmContext, "or.end");
 
   currFunc->getBasicBlockList().push_back(rhsBlock);
-  cg.builder->CreateCondBr(lhsVal, rhsBlock, endBlock);
+  cg.builder->CreateCondBr(lhsVal, endBlock, rhsBlock);
   cg.builder->SetInsertPoint(rhsBlock);
   auto rhsVal = std::any_cast<llvm::Value *>(rhs->accept(cg));
   cg.builder->CreateStore(rhsVal, resVal);
