@@ -1,0 +1,4 @@
+func main() -> u32 {
+    let a: u32;
+    return a;
+}

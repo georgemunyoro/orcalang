@@ -1,0 +1,5 @@
+ProgramNode [1:0 - 4:0] void
+  FunctionDeclarationNode main [1:0 - 3:0] () -> void
+     ->  TypeNode [1:15 - 1:15] 'void' void
+    CompoundStatementNode [1:20 - 3:0] void
+
