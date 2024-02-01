@@ -4,6 +4,7 @@
 #include "OrcaScope.h"
 #include "OrcaType.h"
 #include <any>
+#include <cstdio>
 #include <cstdlib>
 
 std::any OrcaCodeGen::visitProgram(OrcaAstProgramNode *node) {
@@ -49,14 +50,14 @@ std::any OrcaCodeGen::visitFunctionDeclarationStatement(
   // Generate function body
   node->getBody()->accept(*this);
 
-  if (entryBlock->getTerminator() == nullptr) {
+  if (function->getBasicBlockList().back().getTerminator() == nullptr) {
 
     // If the function is not terminated and the return type is
     // not void, throw an error.
     if (!function->getReturnType()->isVoidTy())
       throw OrcaError(compileContext,
                       "Function '" + node->getName() +
-                          "' does not return a value",
+                          "' does not return a value on all paths.",
                       node->parseContext->getStart()->getLine(),
                       node->parseContext->getStart()->getCharPositionInLine());
 
@@ -69,7 +70,7 @@ std::any OrcaCodeGen::visitFunctionDeclarationStatement(
   llvm::verifyFunction(*function);
 
   // Optimize the function
-  fpm->run(*function, *fam);
+  fpm->run(*function);
 
   // Leave the scope
   namedValues = namedValues->getParent();
@@ -239,4 +240,46 @@ OrcaCodeGen::visitIdentifierExpression(OrcaAstIdentifierExpressionNode *node) {
   llvm::AllocaInst *alloca = *namedValues->get(node->getName());
 
   return (llvm::Value *)builder->CreateLoad(alloca->getAllocatedType(), alloca);
+}
+
+std::any
+OrcaCodeGen::visitSelectionStatement(OrcaAstSelectionStatementNode *node) {
+  auto condVal =
+      std::any_cast<llvm::Value *>(node->getCondition()->accept(*this));
+
+  llvm::Function *currentFunction = builder->GetInsertBlock()->getParent();
+  if (!currentFunction) {
+    throw OrcaError(compileContext,
+                    "Selection statements are not supported in global scope.",
+                    node->parseContext->getStart()->getLine(),
+                    node->parseContext->getStart()->getCharPositionInLine());
+  }
+
+  llvm::BasicBlock *thenBlock = llvm::BasicBlock::Create(
+      *llvmContext, getUniqueLabel("if.then"), currentFunction);
+  llvm::BasicBlock *elseBlock =
+      llvm::BasicBlock::Create(*llvmContext, getUniqueLabel("if.else"));
+  llvm::BasicBlock *contBlock =
+      llvm::BasicBlock::Create(*llvmContext, getUniqueLabel("if.cont"));
+
+  builder->CreateCondBr(condVal, thenBlock, elseBlock);
+
+  builder->SetInsertPoint(thenBlock);
+  node->getThenStatement()->accept(*this);
+  if (!currentFunction->getBasicBlockList().back().getTerminator())
+    builder->CreateBr(contBlock);
+
+  elseBlock->insertInto(currentFunction);
+  builder->SetInsertPoint(elseBlock);
+  if (node->getElseStatement())
+    node->getElseStatement()->accept(*this);
+  if (!currentFunction->getBasicBlockList().back().getTerminator())
+    builder->CreateBr(contBlock);
+
+  if (contBlock->hasNPredecessorsOrMore(1)) {
+    contBlock->insertInto(currentFunction);
+    builder->SetInsertPoint(contBlock);
+  }
+
+  return std::any();
 }

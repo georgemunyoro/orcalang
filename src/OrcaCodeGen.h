@@ -32,6 +32,8 @@
 
 #include <memory>
 #include <stdexcept>
+#include <string>
+#include <unordered_map>
 
 #include "OrcaAst.h"
 #include "OrcaAstVisitor.h"
@@ -57,7 +59,7 @@ public:
     si->registerCallbacks(*pic, fam.get());
 
     // Initialize the pass managers
-    fpm = std::make_unique<llvm::FunctionPassManager>();
+    fpm = std::make_unique<llvm::legacy::FunctionPassManager>(module.get());
 
     // Initialize the analysis managers
     fam = std::make_unique<llvm::FunctionAnalysisManager>();
@@ -65,21 +67,18 @@ public:
     cgam = std::make_unique<llvm::CGSCCAnalysisManager>();
     lam = std::make_unique<llvm::LoopAnalysisManager>();
 
-    // Simple peephole and bit-twiddling optimizations.
-    fpm->addPass(llvm::InstCombinePass());
-    // Reassociate expressions.
-    fpm->addPass(llvm::ReassociatePass());
-    // Eliminate Common SubExpressions.
-    fpm->addPass(llvm::GVNPass());
-    // Simplify the control flow graph (deleting unreachable blocks, etc).
-    fpm->addPass(llvm::SimplifyCFGPass());
-
     // Promote allocas to registers.
-    // fpm->addPass(llvm::createPromoteMemoryToRegisterPass());
+    fpm->add(llvm::createPromoteMemoryToRegisterPass());
+
     // peephole optimizations and bit-twiddling optimizations
-    // fpm->addPass(llvm::createInstructionCombiningPass());
+    // fpm->add(llvm::createInstructionCombiningPass());
+
     // reassociate expressions
-    // fpm->addPass(llvm::createReassociatePass());
+    fpm->add(llvm::createReassociatePass());
+    // eliminate common subexpressions
+    fpm->add(llvm::createGVNPass());
+    // simplify the control flow graph (deleting unreachable blocks, etc)
+    fpm->add(llvm::createCFGSimplificationPass());
 
     llvm::PassBuilder pb;
     pb.registerModuleAnalyses(*mam);
@@ -97,9 +96,7 @@ public:
   visitAssignmentExpression(OrcaAstAssignmentExpressionNode *node) override;
 
   std::any
-  visitConditionalExpression(OrcaAstConditionalExpressionNode *node) override {
-    throw "TODO";
-  };
+  visitConditionalExpression(OrcaAstConditionalExpressionNode *node) override;
 
   std::any visitUnaryExpression(OrcaAstUnaryExpressionNode *node) override;
 
@@ -144,6 +141,9 @@ public:
 
   std::any
   visitExpressionStatement(OrcaAstExpressionStatementNode *node) override;
+
+  std::any
+  visitSelectionStatement(OrcaAstSelectionStatementNode *node) override;
 
   std::any visitCastExpression(OrcaAstCastExpressionNode *node) override;
 
@@ -253,7 +253,7 @@ public:
   std::unique_ptr<llvm::PassInstrumentationCallbacks> pic;
 
   // Pass managers
-  std::unique_ptr<llvm::FunctionPassManager> fpm;
+  std::unique_ptr<llvm::legacy::FunctionPassManager> fpm;
 
   // Analysis managers
   std::unique_ptr<llvm::FunctionAnalysisManager> fam;
@@ -263,6 +263,15 @@ public:
 
   OrcaScope<llvm::AllocaInst *> *namedValues =
       new OrcaScope<llvm::AllocaInst *>();
+
+  std::string getUniqueLabel(std::string name) {
+    if (uniqueLabelCounter.find(name) == uniqueLabelCounter.end())
+      uniqueLabelCounter[name] = 0;
+
+    return name + std::to_string(uniqueLabelCounter[name]++);
+  }
+
+  std::unordered_map<std::string, int> uniqueLabelCounter;
 
 private:
   OrcaContext &compileContext;

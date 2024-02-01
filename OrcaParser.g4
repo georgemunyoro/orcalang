@@ -49,8 +49,8 @@ labeledStatement: Identifier ':' statement;
 compoundStatement: '{' statement* '}';
 
 selectionStatement:
-	'if' condition = expression then = compoundStatement (
-		'else' else = compoundStatement
+	'if' condition = expression then = statement (
+		'else' else = statement
 	)?;
 
 expressionStatement: expression ';';

@@ -576,6 +576,47 @@ public:
   }
 };
 
+class OrcaAstSelectionStatementNode : public OrcaAstStatementNode {
+public:
+  OrcaAstSelectionStatementNode(ParserRuleContext *pContext,
+                                OrcaAstExpressionNode *condition,
+                                OrcaAstStatementNode *thenStatement,
+                                OrcaAstStatementNode *elseStatement)
+      : condition(condition), thenStatement(thenStatement),
+        elseStatement(elseStatement) {
+    this->parseContext = pContext;
+    evaluatedType = nullptr;
+  }
+
+  OrcaAstSelectionStatementNode(ParserRuleContext *pContext,
+                                OrcaAstExpressionNode *condition,
+                                OrcaAstStatementNode *thenStatement)
+      : condition(condition), thenStatement(thenStatement),
+        elseStatement(nullptr) {
+    this->parseContext = pContext;
+    evaluatedType = nullptr;
+  }
+
+  std::any accept(OrcaAstVisitor &visitor) override;
+  void print(int indent) override { printf("%s\n", toString(indent).c_str()); }
+
+  std::string toString(int indent) override {
+    return std::string(indent, ' ') + "SelectionStatementNode " +
+           contextString() + "\n" + condition->toString(indent + 2) +
+           thenStatement->toString(indent + 2) +
+           (elseStatement ? elseStatement->toString(indent + 2) : "");
+  }
+
+  OrcaAstExpressionNode *getCondition() const { return condition; }
+  OrcaAstStatementNode *getThenStatement() const { return thenStatement; }
+  OrcaAstStatementNode *getElseStatement() const { return elseStatement; }
+
+private:
+  OrcaAstExpressionNode *condition;
+  OrcaAstStatementNode *thenStatement;
+  OrcaAstStatementNode *elseStatement;
+};
+
 class OrcaAstFunctionDeclarationNode : public OrcaAstStatementNode {
 public:
   OrcaAstFunctionDeclarationNode(ParserRuleContext *pContext,

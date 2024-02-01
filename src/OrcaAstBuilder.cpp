@@ -588,3 +588,21 @@ std::any OrcaAstBuilder::visitCastExpression(
 
   return visit(context->unaryExpression());
 }
+
+std::any OrcaAstBuilder::visitSelectionStatement(
+    OrcaParser::SelectionStatementContext *context) {
+  auto condition =
+      std::any_cast<OrcaAstExpressionNode *>(visit(context->condition));
+  auto thenStatement =
+      (OrcaAstCompoundStatementNode *)std::any_cast<OrcaAstNode *>(
+          visit(context->then));
+  auto elseStatement = (OrcaAstCompoundStatementNode *)nullptr;
+
+  if (context->else_)
+    elseStatement =
+        (OrcaAstCompoundStatementNode *)std::any_cast<OrcaAstNode *>(
+            visit(context->else_));
+
+  return std::any((OrcaAstNode *)new OrcaAstSelectionStatementNode(
+      context, condition, thenStatement, elseStatement));
+}

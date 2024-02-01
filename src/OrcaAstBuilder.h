@@ -177,10 +177,7 @@ public:
       OrcaParser::CompoundStatementContext *context) override;
 
   std::any visitSelectionStatement(
-      OrcaParser::SelectionStatementContext *context) override {
-    printf("visitSelectionStatement\n");
-    throw "TODO";
-  };
+      OrcaParser::SelectionStatementContext *context) override;
 
   std::any visitIterationStatement(
       OrcaParser::IterationStatementContext *context) override {

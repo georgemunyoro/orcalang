@@ -300,6 +300,29 @@ class OrcaTypeChecker : OrcaAstVisitor {
     return node->evaluatedType;
   };
 
+  std::any
+  visitSelectionStatement(OrcaAstSelectionStatementNode *node) override {
+    node->getCondition()->accept(*this);
+    auto thenTy =
+        std::any_cast<OrcaType *>(node->getThenStatement()->accept(*this));
+    if (node->getElseStatement()) {
+      auto elseTy =
+          std::any_cast<OrcaType *>(node->getElseStatement()->accept(*this));
+
+      if (!thenTy->isEqual(elseTy)) {
+        throw OrcaError(
+            compileContext,
+            "Branches of if statement must have the same type. Got '" +
+                thenTy->toString() + "' and '" + elseTy->toString() + "'.",
+            node->parseContext->getStart()->getLine(),
+            node->parseContext->getStart()->getCharPositionInLine());
+      }
+    }
+
+    node->evaluatedType = T_void;
+    return node->evaluatedType;
+  };
+
   std::any visitCastExpression(OrcaAstCastExpressionNode *node) override {
 
     auto type = std::any_cast<OrcaType *>(node->getType()->accept(*this));
