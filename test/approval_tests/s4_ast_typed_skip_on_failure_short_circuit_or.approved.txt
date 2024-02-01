@@ -1,0 +1,25 @@
+ProgramNode [2:0 - 8:0] void
+  FunctionDeclarationNode main [2:0 - 7:0] () -> u32
+     ->  TypeNode [2:15 - 2:15] 'u32' u32
+    CompoundStatementNode [2:19 - 7:0] void
+      ExpressionStatementNode [3:4 - 3:22] 'leta:bool=true;' void
+        AssignmentExpressionNode [3:4 - 3:18] 'leta:bool=true' bool
+          LetExpressionNode a [3:4 - 3:11] 'leta:bool' bool
+            TypeNode [3:11 - 3:11] 'bool' bool
+          BooleanLiteralExpressionNode true
+      ExpressionStatementNode [4:4 - 4:23] 'letb:bool=false;' void
+        AssignmentExpressionNode [4:4 - 4:18] 'letb:bool=false' bool
+          LetExpressionNode b [4:4 - 4:11] 'letb:bool' bool
+            TypeNode [4:11 - 4:11] 'bool' bool
+          BooleanLiteralExpressionNode false
+      ExpressionStatementNode [5:4 - 5:19] 'a||(b=true);' void
+        BinaryExpressionNode || [5:4 - 5:18] 'a||(b=true)' bool
+          IdentifierExpressionNode a [5:4 - 5:4] 'a' bool
+          AssignmentExpressionNode [5:10 - 5:14] 'b=true' bool
+            IdentifierExpressionNode b [5:10 - 5:10] 'b' bool
+            BooleanLiteralExpressionNode true
+      JumpStatementNode return [6:4 - 6:19] 'returnbasu32;' void
+        CastExpressionNode [6:11 - 6:16] 'basu32' u32
+          IdentifierExpressionNode b [6:11 - 6:11] 'b' bool
+          TypeNode [6:16 - 6:16] 'u32' u32
+

@@ -1,0 +1,3 @@
+func main() -> u32 {
+    return (false || false) as u32;
+}

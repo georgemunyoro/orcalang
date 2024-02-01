@@ -1,0 +1,13 @@
+ProgramNode [1:0 - 4:0] ???
+  FunctionDeclarationNode main [1:0 - 3:0] ???
+     ->  TypeNode [1:15 - 1:15] 'u32' ???
+    CompoundStatementNode [1:19 - 3:0] ???
+      JumpStatementNode return [2:4 - 2:44] 'return((true||false)&&false)asu32;' ???
+        CastExpressionNode [2:11 - 2:41] '((true||false)&&false)asu32' ???
+          BinaryExpressionNode && [2:12 - 2:31] '(true||false)&&false' ???
+            BinaryExpressionNode || [2:13 - 2:21] 'true||false' ???
+              BooleanLiteralExpressionNode true
+              BooleanLiteralExpressionNode false
+            BooleanLiteralExpressionNode false
+          TypeNode [2:41 - 2:41] 'u32' ???
+

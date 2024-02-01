@@ -2,7 +2,9 @@ ProgramNode [1:0 - 4:0] ???
   FunctionDeclarationNode main [1:0 - 3:0] ???
      ->  TypeNode [1:15 - 1:15] 'u32' ???
     CompoundStatementNode [1:19 - 3:0] ???
-      JumpStatementNode return [2:4 - 2:13] 'return-5;' ???
-        UnaryExpressionNode - [2:11 - 2:12] '-5' ???
-          IntegerLiteralExpressionNode 5 [2:12 - 2:12] ???
+      JumpStatementNode return [2:4 - 2:22] 'return(-5)asu32;' ???
+        CastExpressionNode [2:11 - 2:19] '(-5)asu32' ???
+          UnaryExpressionNode - [2:12 - 2:13] '-5' ???
+            IntegerLiteralExpressionNode 5 [2:13 - 2:13] ???
+          TypeNode [2:19 - 2:19] 'u32' ???
 

@@ -14,7 +14,6 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-# compiler must be 17
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -79,15 +78,33 @@ add_executable(orca
               src/OrcaTypeChecker.cpp
               src/OrcaScope.cpp
               src/OrcaCodeGen.cpp
-              src/OrcaOperator.cpp
+              src/OrcaType.cpp
+
+              src/Operator/Binary/Add.cpp
+              src/Operator/Binary/Sub.cpp
+              src/Operator/Binary/Mul.cpp
+              src/Operator/Binary/Div.cpp
+              src/Operator/Binary/LogicalAnd.cpp
+              src/Operator/Binary/LogicalOr.cpp
+              src/Operator/Binary/Assign.cpp
+              src/Operator/Binary/CmpEQ.cpp
+              src/Operator/Binary/CmpGE.cpp
+              src/Operator/Binary/CmpGT.cpp
+              src/Operator/Binary/CmpLT.cpp
+              src/Operator/Binary/CmpLE.cpp
+              src/Operator/Binary/CmpNE.cpp
+              src/Operator/Unary/BitNot.cpp
+              src/Operator/Unary/Neg.cpp
+              src/Operator/Unary/Not.cpp
+
               ${ANTLR_OrcaLexer_CXX_OUTPUTS}
               ${ANTLR_OrcaParser_CXX_OUTPUTS}
 )
 
-llvm_map_components_to_libnames(llvm_libs support core irreader)
+llvm_map_components_to_libnames(llvm_libs ${LLVM_TARGETS_TO_BUILD} support core irreader codegen mc mcparser option)
 
 target_link_libraries(orca antlr4_static)
-target_link_libraries(orca ${llvm_libs})
+target_link_libraries(orca ${llvm_libs} ${targets})
 
 enable_testing()
 
@@ -102,11 +119,31 @@ add_executable(orca_test
               src/OrcaTypeChecker.cpp
               src/OrcaScope.cpp
               src/OrcaCodeGen.cpp
-              src/OrcaOperator.cpp
+              src/OrcaType.cpp
 
-              test/utils.cpp
-              test/snapshot.cpp
+              src/Operator/Binary/Add.cpp
+              src/Operator/Binary/Sub.cpp
+              src/Operator/Binary/Mul.cpp
+              src/Operator/Binary/Div.cpp
+              src/Operator/Binary/LogicalAnd.cpp
+              src/Operator/Binary/LogicalOr.cpp
+              src/Operator/Binary/Assign.cpp
+              src/Operator/Binary/CmpEQ.cpp
+              src/Operator/Binary/CmpGE.cpp
+              src/Operator/Binary/CmpGT.cpp
+              src/Operator/Binary/CmpLT.cpp
+              src/Operator/Binary/CmpLE.cpp
+              src/Operator/Binary/CmpNE.cpp
+              src/Operator/Unary/BitNot.cpp
+              src/Operator/Unary/Neg.cpp
+              src/Operator/Unary/Not.cpp
+
               test/main.cpp
+              test/utils.cpp
+
+              test/snapshot.cpp
+
+              test/add_operator.cpp
 
                ${ANTLR_OrcaLexer_CXX_OUTPUTS}
                ${ANTLR_OrcaParser_CXX_OUTPUTS})
