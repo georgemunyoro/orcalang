@@ -176,10 +176,7 @@ public:
   };
 
   std::any visitFunctionDeclarationStatement(
-      OrcaParser::FunctionDeclarationStatementContext *context) override {
-    printf("visitFunctionDeclarationStatement\n");
-    throw "TODO";
-  };
+      OrcaParser::FunctionDeclarationStatementContext *context) override;
 
   std::any visitFunctionArg(OrcaParser::FunctionArgContext *context) override {
     printf("visitFunctionArg\n");
@@ -211,10 +208,7 @@ public:
   };
 
   std::any visitSelectionStatement(
-      OrcaParser::SelectionStatementContext *context) override {
-    printf("visitSelectionStatement\n");
-    throw "TODO";
-  };
+      OrcaParser::SelectionStatementContext *context) override;
 
   std::any visitIterationStatement(
       OrcaParser::IterationStatementContext *context) override {

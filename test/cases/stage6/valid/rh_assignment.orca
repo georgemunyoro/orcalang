@@ -1,0 +1,6 @@
+func main() -> u32 {
+    let flag: bool = true;
+    let a: u32 = 0;
+    flag ? a = 1 : (a = 2);
+    return a; // 1
+}

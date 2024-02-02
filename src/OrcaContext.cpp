@@ -1,3 +1,6 @@
+#include <DiagnosticErrorListener.h>
+#include <atn/ParserATNSimulator.h>
+#include <atn/PredictionMode.h>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -33,6 +36,11 @@ void OrcaContext::parse() {
   parserErrorListener = new OrcaParserErrorListener(*this);
   parser->removeErrorListeners();
   parser->addErrorListener(parserErrorListener);
+
+  parser->addErrorListener(new DiagnosticErrorListener());
+  parser->getInterpreter<atn::ParserATNSimulator>()->setPredictionMode(
+      atn::PredictionMode::SLL);
+
   programContext = parser->program();
 }
 
@@ -43,13 +51,13 @@ void OrcaContext::buildAst() {
   // ast->print(0);
   // printf("\n");
 
-  // try {
-  //   std::cout << "========== AST built successfully ===========" <<
-  //   std::endl; std::cout << ast->toString(0) << std::endl;
-  // } catch (char *c) {
-  //   std::cout << "========= AST Failed to build ==========" << std::endl;
-  //   std::cout << c << std::endl;
-  // }
+  try {
+    std::cout << "========== AST built successfully ===========" << std::endl;
+    std::cout << ast->toString(0) << std::endl;
+  } catch (char *c) {
+    std::cout << "========= AST Failed to build ==========" << std::endl;
+    std::cout << c << std::endl;
+  }
 }
 
 void OrcaContext::evaluateTypes() {
@@ -59,20 +67,28 @@ void OrcaContext::evaluateTypes() {
   // ast->print(0);
   // printf("\n");
 
-  // try {
-  //   std::cout << "========== Type checking completed successfully
-  //   ==========="
-  //             << std::endl;
-  //   std::cout << ast->toString(0) << std::endl;
-  // } catch (char *c) {
-  //   std::cout << "========= Type checking failed ==========" << std::endl;
-  //   std::cout << c << std::endl;
-  // }
+  try {
+    std::cout << "========== Type checking completed successfully ==========="
+              << std::endl;
+    std::cout << ast->toString(0) << std::endl;
+  } catch (char *c) {
+    std::cout << "========= Type checking failed ==========" << std::endl;
+    std::cout << c << std::endl;
+  }
 }
 
 void OrcaContext::codegen() {
   codeGenerator = new OrcaCodeGen(*this);
   codeGenerator->generateCode(ast);
+
+  try {
+    std::cout << "========== Code generation completed successfully ==========="
+              << std::endl;
+    codeGenerator->module->print(llvm::errs(), nullptr);
+  } catch (char *c) {
+    std::cout << "========= Code generation failed ==========" << std::endl;
+    std::cout << c << std::endl;
+  }
 }
 
 void OrcaContext::readSourceCode() {

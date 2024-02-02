@@ -1,0 +1,30 @@
+ProgramNode [1:0 - 7:0] void
+  FunctionDeclarationNode main [1:0 - 6:0] () -> u32
+     ->  TypeNode [1:15 - 1:15] 'u32' u32
+    CompoundStatementNode [1:19 - 6:0] void
+      ExpressionStatementNode [2:4 - 2:18] 'leta:u32=1;' void
+        AssignmentExpressionNode [2:4 - 2:17] 'leta:u32=1' u32
+          LetExpressionNode a [2:4 - 2:11] 'leta:u32' u32
+            TypeNode [2:11 - 2:11] 'u32' u32
+          IntegerLiteralExpressionNode 1 [2:17 - 2:17] u32
+      ExpressionStatementNode [3:4 - 3:18] 'letb:u32=2;' void
+        AssignmentExpressionNode [3:4 - 3:17] 'letb:u32=2' u32
+          LetExpressionNode b [3:4 - 3:11] 'letb:u32' u32
+            TypeNode [3:11 - 3:11] 'u32' u32
+          IntegerLiteralExpressionNode 2 [3:17 - 3:17] u32
+      ExpressionStatementNode [4:4 - 4:26] 'letflag:bool=false;' void
+        AssignmentExpressionNode [4:4 - 4:21] 'letflag:bool=false' bool
+          LetExpressionNode flag [4:4 - 4:14] 'letflag:bool' bool
+            TypeNode [4:14 - 4:14] 'bool' bool
+          BooleanLiteralExpressionNode false
+      JumpStatementNode return [5:4 - 5:35] 'returna>b?5:flag?6:7;' void
+        ConditionalExpressionNode [5:11 - 5:34] 'a>b?5:flag?6:7' u32
+          BinaryExpressionNode > [5:11 - 5:15] 'a>b' bool
+            IdentifierExpressionNode a [5:11 - 5:11] 'a' u32
+            IdentifierExpressionNode b [5:15 - 5:15] 'b' u32
+          IntegerLiteralExpressionNode 5 [5:19 - 5:19] u32
+          ConditionalExpressionNode [5:23 - 5:34] 'flag?6:7' u32
+            IdentifierExpressionNode flag [5:23 - 5:23] 'flag' bool
+            IntegerLiteralExpressionNode 6 [5:30 - 5:30] u32
+            IntegerLiteralExpressionNode 7 [5:34 - 5:34] u32
+

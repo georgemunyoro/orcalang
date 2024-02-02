@@ -101,7 +101,32 @@ class OrcaTypeChecker : OrcaAstVisitor {
 
   std::any
   visitConditionalExpression(OrcaAstConditionalExpressionNode *node) override {
-    throw "TODO";
+    auto conditionType =
+        std::any_cast<OrcaType *>(node->getCondition()->accept(*this));
+
+    if (!conditionType->is(OrcaTypeKind::Boolean)) {
+      throw OrcaError(
+          compileContext,
+          "Condition of ternary expression must be of type 'bool'. Got '" +
+              conditionType->toString() + "'.",
+          node->parseContext->getStart()->getLine(),
+          node->parseContext->getStart()->getCharPositionInLine());
+    }
+
+    auto thenTy = std::any_cast<OrcaType *>(node->getThenExpr()->accept(*this));
+    auto elseTy = std::any_cast<OrcaType *>(node->getElseExpr()->accept(*this));
+
+    if (!thenTy->isEqual(elseTy)) {
+      throw OrcaError(
+          compileContext,
+          "Ternary expression branches should be of same type. Got '" +
+              thenTy->toString() + "' and '" + elseTy->toString() + "'.",
+          node->parseContext->getStart()->getLine(),
+          node->parseContext->getStart()->getCharPositionInLine());
+    }
+
+    node->evaluatedType = thenTy;
+    return std::any(node->evaluatedType);
   };
 
   std::any visitUnaryExpression(OrcaAstUnaryExpressionNode *node) override {
@@ -295,6 +320,29 @@ class OrcaTypeChecker : OrcaAstVisitor {
   std::any
   visitExpressionStatement(OrcaAstExpressionStatementNode *node) override {
     node->expr->accept(*this);
+
+    node->evaluatedType = T_void;
+    return node->evaluatedType;
+  };
+
+  std::any
+  visitSelectionStatement(OrcaAstSelectionStatementNode *node) override {
+    node->getCondition()->accept(*this);
+    auto thenTy =
+        std::any_cast<OrcaType *>(node->getThenStatement()->accept(*this));
+    if (node->getElseStatement()) {
+      auto elseTy =
+          std::any_cast<OrcaType *>(node->getElseStatement()->accept(*this));
+
+      if (!thenTy->isEqual(elseTy)) {
+        throw OrcaError(
+            compileContext,
+            "Branches of if statement must have the same type. Got '" +
+                thenTy->toString() + "' and '" + elseTy->toString() + "'.",
+            node->parseContext->getStart()->getLine(),
+            node->parseContext->getStart()->getCharPositionInLine());
+      }
+    }
 
     node->evaluatedType = T_void;
     return node->evaluatedType;

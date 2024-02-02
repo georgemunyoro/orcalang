@@ -36,4 +36,6 @@ public:
   virtual std::any
   visitExpressionStatement(OrcaAstExpressionStatementNode *node) = 0;
   virtual std::any visitCastExpression(OrcaAstCastExpressionNode *node) = 0;
+  virtual std::any
+  visitSelectionStatement(OrcaAstSelectionStatementNode *node) = 0;
 };
