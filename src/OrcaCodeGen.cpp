@@ -4,6 +4,7 @@
 #include "OrcaScope.h"
 #include "OrcaType.h"
 #include <any>
+#include <cassert>
 #include <cstdio>
 #include <cstdlib>
 
@@ -29,7 +30,7 @@ std::any OrcaCodeGen::visitFunctionDeclarationStatement(
 
   auto function = llvm::Function::Create(
       llvm::cast<llvm::FunctionType>(functionType),
-      llvm::Function::ExternalLinkage, node->getName(), module.get());
+      llvm::Function::ExternalLinkage, node->getName(), module);
 
   auto entryBlock = llvm::BasicBlock::Create(*llvmContext, "entry", function);
   builder->SetInsertPoint(entryBlock);
@@ -70,7 +71,8 @@ std::any OrcaCodeGen::visitFunctionDeclarationStatement(
   llvm::verifyFunction(*function);
 
   // Optimize the function
-  fpm->run(*function);
+  fpm->run(*function, *fam);
+  fpmLegacy->run(*function);
 
   // Leave the scope
   namedValues = namedValues->getParent();
@@ -282,4 +284,52 @@ OrcaCodeGen::visitSelectionStatement(OrcaAstSelectionStatementNode *node) {
   }
 
   return std::any();
+}
+
+std::any OrcaCodeGen::visitConditionalExpression(
+    OrcaAstConditionalExpressionNode *node) {
+  auto condVal =
+      std::any_cast<llvm::Value *>(node->getCondition()->accept(*this));
+
+  llvm::Function *currentFunction = builder->GetInsertBlock()->getParent();
+  if (!currentFunction) {
+    throw OrcaError(compileContext,
+                    "Selection statements are not supported in global scope.",
+                    node->parseContext->getStart()->getLine(),
+                    node->parseContext->getStart()->getCharPositionInLine());
+  }
+
+  // Create a temporary alloca to store the result.
+  // Will change this to a phi node later, but this is easier, and it's
+  // optimized away by LLVM anyway.
+  auto alloca =
+      builder->CreateAlloca(generateType(node->evaluatedType), nullptr);
+
+  llvm::BasicBlock *thenBlock = llvm::BasicBlock::Create(
+      *llvmContext, getUniqueLabel("tern.then"), currentFunction);
+  llvm::BasicBlock *elseBlock =
+      llvm::BasicBlock::Create(*llvmContext, getUniqueLabel("tern.else"));
+  llvm::BasicBlock *contBlock =
+      llvm::BasicBlock::Create(*llvmContext, getUniqueLabel("tern.cont"));
+
+  builder->CreateCondBr(condVal, thenBlock, elseBlock);
+  builder->SetInsertPoint(thenBlock);
+  auto thenVal =
+      std::any_cast<llvm::Value *>(node->getThenExpr()->accept(*this));
+  builder->CreateStore(thenVal, alloca);
+  builder->CreateBr(contBlock);
+
+  elseBlock->insertInto(currentFunction);
+  builder->SetInsertPoint(elseBlock);
+  auto elseVal =
+      std::any_cast<llvm::Value *>(node->getElseExpr()->accept(*this));
+  builder->CreateStore(elseVal, alloca);
+  builder->CreateBr(contBlock);
+
+  contBlock->insertInto(currentFunction);
+  builder->SetInsertPoint(contBlock);
+
+  auto loadInst = builder->CreateLoad(alloca->getAllocatedType(), alloca);
+
+  return (llvm::Value *)loadInst;
 }

@@ -1,0 +1,26 @@
+ProgramNode [1:0 - 9:0] ???
+  FunctionDeclarationNode main [1:0 - 8:0] ???
+     ->  TypeNode [1:15 - 1:15] 'u32' ???
+    CompoundStatementNode [1:19 - 8:0] ???
+      ExpressionStatementNode [2:4 - 2:18] 'leta:u32=0;' ???
+        AssignmentExpressionNode [2:4 - 2:17] 'leta:u32=0' ???
+          LetExpressionNode a [2:4 - 2:11] 'leta:u32' ???
+            TypeNode [2:11 - 2:11] 'u32' ???
+          IntegerLiteralExpressionNode 0 [2:17 - 2:17] ???
+      ExpressionStatementNode [3:4 - 3:18] 'letb:u32=0;' ???
+        AssignmentExpressionNode [3:4 - 3:17] 'letb:u32=0' ???
+          LetExpressionNode b [3:4 - 3:11] 'letb:u32' ???
+            TypeNode [3:11 - 3:11] 'u32' ???
+          IntegerLiteralExpressionNode 0 [3:17 - 3:17] ???
+      SelectionStatementNode [4:4 - 6:4] 'ifa==1{b=1;}' ???
+        BinaryExpressionNode == [4:7 - 4:12] 'a==1' ???
+          IdentifierExpressionNode a [4:7 - 4:7] 'a' ???
+          IntegerLiteralExpressionNode 1 [4:12 - 4:12] ???
+        CompoundStatementNode [4:14 - 6:4] ???
+          ExpressionStatementNode [5:8 - 5:13] 'b=1;' ???
+            AssignmentExpressionNode [5:8 - 5:12] 'b=1' ???
+              IdentifierExpressionNode b [5:8 - 5:8] 'b' ???
+              IntegerLiteralExpressionNode 1 [5:12 - 5:12] ???
+      JumpStatementNode return [7:4 - 7:12] 'returnb;' ???
+        IdentifierExpressionNode b [7:11 - 7:11] 'b' ???
+

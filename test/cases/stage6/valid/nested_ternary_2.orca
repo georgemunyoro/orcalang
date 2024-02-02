@@ -1,0 +1,5 @@
+func main() -> u32 {
+    let a: u32 = true ? true ? 3 : 4 : 5;
+    let b: u32 = false ? true ? 3 : 4 : 5;
+    return a * b; // 15
+}

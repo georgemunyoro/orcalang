@@ -1,0 +1,11 @@
+func main() -> u32 {
+    let a: u32 = 0;
+    if true {
+        if true {
+            a = 3;
+        } else {
+            a = 4;
+        }
+    }
+    return a; // 3
+}

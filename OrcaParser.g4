@@ -39,19 +39,18 @@ functionArgs: functionArg (',' functionArg)*;
 functionArg: name = Identifier ':' type;
 
 jumpStatement:
-	'break' ';'
-	| 'continue' ';'
-	| 'return' ';'
-	| 'return' expression ';';
+	(('break' | 'continue' | 'return') | ('return' expression)) ';';
 
 labeledStatement: Identifier ':' statement;
 
 compoundStatement: '{' statement* '}';
 
 selectionStatement:
-	'if' condition = expression then = statement (
-		'else' else = statement
+	'if' condition = expression then = ifStatementBody (
+		'else' else = ifStatementBody
 	)?;
+
+ifStatementBody: selectionStatement | compoundStatement;
 
 expressionStatement: expression ';';
 

@@ -589,6 +589,17 @@ std::any OrcaAstBuilder::visitCastExpression(
   return visit(context->unaryExpression());
 }
 
+std::any OrcaAstBuilder::visitIfStatementBody(
+    OrcaParser::IfStatementBodyContext *context) {
+  if (context->compoundStatement()) {
+    return std::any(std::any_cast<OrcaAstNode *>(
+        context->compoundStatement()->accept(this)));
+  }
+
+  return std::any(std::any_cast<OrcaAstNode *>(
+      context->selectionStatement()->accept(this)));
+}
+
 std::any OrcaAstBuilder::visitSelectionStatement(
     OrcaParser::SelectionStatementContext *context) {
   auto condition =

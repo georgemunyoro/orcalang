@@ -1,0 +1,31 @@
+ProgramNode [1:0 - 6:0] ???
+  FunctionDeclarationNode main [1:0 - 5:0] ???
+     ->  TypeNode [1:15 - 1:15] 'u32' ???
+    CompoundStatementNode [1:19 - 5:0] ???
+      ExpressionStatementNode [2:4 - 2:40] 'leta:u32=true?true?3:4:5;' ???
+        AssignmentExpressionNode [2:4 - 2:39] 'leta:u32=true?true?3:4:5' ???
+          LetExpressionNode a [2:4 - 2:11] 'leta:u32' ???
+            TypeNode [2:11 - 2:11] 'u32' ???
+          ConditionalExpressionNode [2:17 - 2:39] 'true?true?3:4:5' ???
+            BooleanLiteralExpressionNode true
+            ConditionalExpressionNode [2:24 - 2:35] 'true?3:4' ???
+              BooleanLiteralExpressionNode true
+              IntegerLiteralExpressionNode 3 [2:31 - 2:31] ???
+              IntegerLiteralExpressionNode 4 [2:35 - 2:35] ???
+            IntegerLiteralExpressionNode 5 [2:39 - 2:39] ???
+      ExpressionStatementNode [3:4 - 3:41] 'letb:u32=false?true?3:4:5;' ???
+        AssignmentExpressionNode [3:4 - 3:40] 'letb:u32=false?true?3:4:5' ???
+          LetExpressionNode b [3:4 - 3:11] 'letb:u32' ???
+            TypeNode [3:11 - 3:11] 'u32' ???
+          ConditionalExpressionNode [3:17 - 3:40] 'false?true?3:4:5' ???
+            BooleanLiteralExpressionNode false
+            ConditionalExpressionNode [3:25 - 3:36] 'true?3:4' ???
+              BooleanLiteralExpressionNode true
+              IntegerLiteralExpressionNode 3 [3:32 - 3:32] ???
+              IntegerLiteralExpressionNode 4 [3:36 - 3:36] ???
+            IntegerLiteralExpressionNode 5 [3:40 - 3:40] ???
+      JumpStatementNode return [4:4 - 4:16] 'returna*b;' ???
+        BinaryExpressionNode * [4:11 - 4:15] 'a*b' ???
+          IdentifierExpressionNode a [4:11 - 4:11] 'a' ???
+          IdentifierExpressionNode b [4:15 - 4:15] 'b' ???
+

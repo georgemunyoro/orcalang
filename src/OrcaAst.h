@@ -397,6 +397,10 @@ public:
            thenExpr->toString(indent + 2) + elseExpr->toString(indent + 2);
   }
 
+  OrcaAstExpressionNode *getCondition() const { return condition; }
+  OrcaAstExpressionNode *getThenExpr() const { return thenExpr; }
+  OrcaAstExpressionNode *getElseExpr() const { return elseExpr; }
+
 private:
   OrcaAstExpressionNode *condition;
   OrcaAstExpressionNode *thenExpr;

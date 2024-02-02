@@ -1,0 +1,20 @@
+ProgramNode [1:0 - 5:0] ???
+  FunctionDeclarationNode main [1:0 - 4:0] ???
+     ->  TypeNode [1:15 - 1:15] 'u32' ???
+    CompoundStatementNode [1:19 - 4:0] ???
+      ExpressionStatementNode [2:4 - 2:18] 'leta:u32=0;' ???
+        AssignmentExpressionNode [2:4 - 2:17] 'leta:u32=0' ???
+          LetExpressionNode a [2:4 - 2:11] 'leta:u32' ???
+            TypeNode [2:11 - 2:11] 'u32' ???
+          IntegerLiteralExpressionNode 0 [2:17 - 2:17] ???
+      JumpStatementNode return [3:4 - 3:34] 'return(aass32)>-1?4:5;' ???
+        ConditionalExpressionNode [3:11 - 3:33] '(aass32)>-1?4:5' ???
+          BinaryExpressionNode > [3:11 - 3:25] '(aass32)>-1' ???
+            CastExpressionNode [3:12 - 3:17] 'aass32' ???
+              IdentifierExpressionNode a [3:12 - 3:12] 'a' ???
+              TypeNode [3:17 - 3:17] 's32' ???
+            UnaryExpressionNode - [3:24 - 3:25] '-1' ???
+              IntegerLiteralExpressionNode 1 [3:25 - 3:25] ???
+          IntegerLiteralExpressionNode 4 [3:29 - 3:29] ???
+          IntegerLiteralExpressionNode 5 [3:33 - 3:33] ???
+

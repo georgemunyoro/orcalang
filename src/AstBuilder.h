@@ -176,10 +176,7 @@ public:
   };
 
   std::any visitFunctionDeclarationStatement(
-      OrcaParser::FunctionDeclarationStatementContext *context) override {
-    printf("visitFunctionDeclarationStatement\n");
-    throw "TODO";
-  };
+      OrcaParser::FunctionDeclarationStatementContext *context) override;
 
   std::any visitFunctionArg(OrcaParser::FunctionArgContext *context) override {
     printf("visitFunctionArg\n");

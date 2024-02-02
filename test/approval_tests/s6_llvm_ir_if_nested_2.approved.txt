@@ -1,5 +1,5 @@
 define i32 @main() {
 entry:
-  ret i32 3
+  ret i32 2
 }
 
