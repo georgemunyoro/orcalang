@@ -1,0 +1,40 @@
+ProgramNode [1:0 - 16:0] ???
+  FunctionDeclarationNode main [1:0 - 15:0] ???
+     ->  TypeNode [1:15 - 1:15] 'u32' ???
+    CompoundStatementNode [1:19 - 15:0] ???
+      ExpressionStatementNode [2:4 - 2:18] 'leta:u32=0;' ???
+        AssignmentExpressionNode [2:4 - 2:17] 'leta:u32=0' ???
+          LetExpressionNode a [2:4 - 2:11] 'leta:u32' ???
+            TypeNode [2:11 - 2:11] 'u32' ???
+          IntegerLiteralExpressionNode 0 [2:17 - 2:17] ???
+      SelectionStatementNode [3:4 - 13:4] 'ifa!=0{letb:u32=2;returnb;}else{letc:u32=3;ifa<c{return4;}else{return5;}}' ???
+        BinaryExpressionNode != [3:7 - 3:12] 'a!=0' ???
+          IdentifierExpressionNode a [3:7 - 3:7] 'a' ???
+          IntegerLiteralExpressionNode 0 [3:12 - 3:12] ???
+        CompoundStatementNode [3:14 - 6:4] ???
+          ExpressionStatementNode [4:8 - 4:22] 'letb:u32=2;' ???
+            AssignmentExpressionNode [4:8 - 4:21] 'letb:u32=2' ???
+              LetExpressionNode b [4:8 - 4:15] 'letb:u32' ???
+                TypeNode [4:15 - 4:15] 'u32' ???
+              IntegerLiteralExpressionNode 2 [4:21 - 4:21] ???
+          JumpStatementNode return [5:8 - 5:16] 'returnb;' ???
+            IdentifierExpressionNode b [5:15 - 5:15] 'b' ???
+        CompoundStatementNode [6:11 - 13:4] ???
+          ExpressionStatementNode [7:8 - 7:22] 'letc:u32=3;' ???
+            AssignmentExpressionNode [7:8 - 7:21] 'letc:u32=3' ???
+              LetExpressionNode c [7:8 - 7:15] 'letc:u32' ???
+                TypeNode [7:15 - 7:15] 'u32' ???
+              IntegerLiteralExpressionNode 3 [7:21 - 7:21] ???
+          SelectionStatementNode [8:8 - 12:8] 'ifa<c{return4;}else{return5;}' ???
+            BinaryExpressionNode < [8:11 - 8:15] 'a<c' ???
+              IdentifierExpressionNode a [8:11 - 8:11] 'a' ???
+              IdentifierExpressionNode c [8:15 - 8:15] 'c' ???
+            CompoundStatementNode [8:17 - 10:8] ???
+              JumpStatementNode return [9:12 - 9:20] 'return4;' ???
+                IntegerLiteralExpressionNode 4 [9:19 - 9:19] ???
+            CompoundStatementNode [10:15 - 12:8] ???
+              JumpStatementNode return [11:12 - 11:20] 'return5;' ???
+                IntegerLiteralExpressionNode 5 [11:19 - 11:19] ???
+      JumpStatementNode return [14:4 - 14:12] 'returna;' ???
+        IdentifierExpressionNode a [14:11 - 14:11] 'a' ???
+

@@ -1,0 +1,10 @@
+func main() -> u32 {
+    let a: u32 = 2;
+    if a < 3 {
+        {
+            let a: u32 = 3;
+            return a;
+        }
+    }
+    return 1; // unreachable
+}

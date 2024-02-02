@@ -75,3 +75,4 @@ INSTANTIATE_TEST_SUITE_P(stage_3, Fixture, GetData("3", "valid"));
 INSTANTIATE_TEST_SUITE_P(stage_4, Fixture, GetData("4", "valid"));
 INSTANTIATE_TEST_SUITE_P(stage_5, Fixture, GetData("5", "valid"));
 INSTANTIATE_TEST_SUITE_P(stage_6, Fixture, GetData("6", "valid"));
+INSTANTIATE_TEST_SUITE_P(stage_7, Fixture, GetData("7", "valid"));

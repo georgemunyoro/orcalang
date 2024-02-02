@@ -1,0 +1,15 @@
+func main() -> u32 {
+    let a: u32 = 0;
+    if a != 0 {
+        let b: u32 = 2;
+        return b;
+    } else {
+        let c: u32 = 3;
+        if a < c {
+            return 4;
+        } else {
+            return 5;
+        }
+    }
+    return a; // 4
+}
