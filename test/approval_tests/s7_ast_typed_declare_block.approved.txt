@@ -1,0 +1,19 @@
+ProgramNode [1:0 - 8:0] void
+  FunctionDeclarationNode main [1:0 - 7:0] () -> u32
+     ->  TypeNode [1:15 - 1:15] 'u32' u32
+    CompoundStatementNode [1:19 - 7:0] void
+      SelectionStatementNode [2:4 - 5:4] 'if5!=0{leti:u32=0;returni;}' void
+        BinaryExpressionNode != [2:7 - 2:12] '5!=0' bool
+          IntegerLiteralExpressionNode 5 [2:7 - 2:7] u32
+          IntegerLiteralExpressionNode 0 [2:12 - 2:12] u32
+        CompoundStatementNode [2:14 - 5:4] void
+          ExpressionStatementNode [3:8 - 3:22] 'leti:u32=0;' void
+            AssignmentExpressionNode [3:8 - 3:21] 'leti:u32=0' u32
+              LetExpressionNode i [3:8 - 3:15] 'leti:u32' u32
+                TypeNode [3:15 - 3:15] 'u32' u32
+              IntegerLiteralExpressionNode 0 [3:21 - 3:21] u32
+          JumpStatementNode return [4:8 - 4:16] 'returni;' void
+            IdentifierExpressionNode i [4:15 - 4:15] 'i' u32
+      JumpStatementNode return [6:4 - 6:12] 'return1;' void
+        IntegerLiteralExpressionNode 1 [6:11 - 6:11] u32
+

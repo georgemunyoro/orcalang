@@ -1,0 +1,7 @@
+func main() -> u32 {
+    if 5 != 0 {
+        let i: u32 = 0;
+        return i;
+    }
+    return 1; // unreachable
+}

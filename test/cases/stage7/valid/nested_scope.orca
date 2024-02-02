@@ -1,0 +1,9 @@
+func main() -> u32 {
+    let a: u32 = 2;
+    let b: u32 = 3;
+    {
+        let a: u32 = 1;
+        b = b + a;
+    }
+    return b; // 4
+}

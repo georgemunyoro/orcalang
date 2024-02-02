@@ -1,0 +1,12 @@
+func main() -> u32 {
+    let a: u32 = 0;
+    {
+        let b: u32 = 1;
+        a = b;
+    }
+    {
+        let b: u32 = 2;
+        a = a + b;
+    }
+    return a; // 3
+}
