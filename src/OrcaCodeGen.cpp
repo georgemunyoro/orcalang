@@ -17,8 +17,14 @@ std::any OrcaCodeGen::visitProgram(OrcaAstProgramNode *node) {
 
 std::any
 OrcaCodeGen::visitCompoundStatement(OrcaAstCompoundStatementNode *node) {
+  // Enter a new scope
+  namedValues = new OrcaScope<llvm::AllocaInst *>(namedValues);
+
   for (auto &node : node->getNodes())
     node->accept(*this);
+
+  // Leave the scope
+  namedValues = namedValues->getParent();
 
   return std::any();
 }
