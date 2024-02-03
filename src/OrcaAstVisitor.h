@@ -38,4 +38,6 @@ public:
   virtual std::any visitCastExpression(OrcaAstCastExpressionNode *node) = 0;
   virtual std::any
   visitSelectionStatement(OrcaAstSelectionStatementNode *node) = 0;
+  virtual std::any
+  visitIterationStatement(OrcaAstIterationStatementNode *node) = 0;
 };

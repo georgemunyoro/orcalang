@@ -43,6 +43,12 @@
 #include "OrcaScope.h"
 #include "OrcaType.h"
 
+typedef struct {
+  llvm::BasicBlock *header;
+  llvm::BasicBlock *body;
+  llvm::BasicBlock *after;
+} LoopInfo;
+
 class OrcaContext;
 
 class OrcaCodeGen : public OrcaAstVisitor {
@@ -115,6 +121,9 @@ public:
       OrcaAstFunctionDeclarationNode *node) override;
 
   std::any visitJumpStatement(OrcaAstJumpStatementNode *node) override;
+
+  std::any
+  visitIterationStatement(OrcaAstIterationStatementNode *node) override;
 
   std::any visitBinaryExpression(OrcaAstBinaryExpressionNode *node) override;
 
@@ -261,6 +270,9 @@ public:
   std::unique_ptr<llvm::ModuleAnalysisManager> mam;
   std::unique_ptr<llvm::CGSCCAnalysisManager> cgam;
   std::unique_ptr<llvm::LoopAnalysisManager> lam;
+
+  // Stores information about the current loop
+  std::vector<LoopInfo> loopStack;
 
   OrcaScope<llvm::AllocaInst *> *namedValues =
       new OrcaScope<llvm::AllocaInst *>();

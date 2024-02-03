@@ -97,6 +97,15 @@ std::any OrcaCodeGen::visitJumpStatement(OrcaAstJumpStatementNode *node) {
     return builder->CreateRet(returnValue);
   }
 
+  if (node->getKeyword() == "break") {
+    if (loopStack.empty())
+      throw OrcaError(compileContext, "Break statement not in a loop.",
+                      node->parseContext->getStart()->getLine(),
+                      node->parseContext->getStart()->getCharPositionInLine());
+
+    return builder->CreateBr(loopStack.back().after);
+  }
+
   throw OrcaError(compileContext,
                   "Unknown jump statement '" + node->getKeyword() +
                       "'. This is a bug.",
@@ -338,4 +347,47 @@ std::any OrcaCodeGen::visitConditionalExpression(
   auto loadInst = builder->CreateLoad(alloca->getAllocatedType(), alloca);
 
   return (llvm::Value *)loadInst;
+}
+
+std::any
+OrcaCodeGen::visitIterationStatement(OrcaAstIterationStatementNode *node) {
+  llvm::Function *currentFunction = builder->GetInsertBlock()->getParent();
+  if (!currentFunction) {
+    throw OrcaError(compileContext,
+                    "Iteration statements are not supported in global scope.",
+                    node->parseContext->getStart()->getLine(),
+                    node->parseContext->getStart()->getCharPositionInLine());
+  }
+
+  llvm::BasicBlock *condBlock = llvm::BasicBlock::Create(
+      *llvmContext, getUniqueLabel("w.cond"), currentFunction);
+  llvm::BasicBlock *bodyBlock =
+      llvm::BasicBlock::Create(*llvmContext, getUniqueLabel("w.body"));
+  llvm::BasicBlock *contBlock =
+      llvm::BasicBlock::Create(*llvmContext, getUniqueLabel("w.cont"));
+
+  loopStack.push_back({
+      .header = condBlock,
+      .body = bodyBlock,
+      .after = contBlock,
+  });
+
+  builder->CreateBr(condBlock);
+  builder->SetInsertPoint(condBlock);
+  builder->CreateCondBr(
+      std::any_cast<llvm::Value *>(node->getCondition()->accept(*this)),
+      bodyBlock, contBlock);
+
+  bodyBlock->insertInto(currentFunction);
+  builder->SetInsertPoint(bodyBlock);
+  node->getBody()->accept(*this);
+  if (!currentFunction->getBasicBlockList().back().getTerminator())
+    builder->CreateBr(condBlock);
+
+  contBlock->insertInto(currentFunction);
+  builder->SetInsertPoint(contBlock);
+
+  loopStack.pop_back();
+
+  return std::any();
 }

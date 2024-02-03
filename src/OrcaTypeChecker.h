@@ -181,6 +181,14 @@ class OrcaTypeChecker : OrcaAstVisitor {
     return std::any(node->evaluatedType);
   };
 
+  std::any
+  visitIterationStatement(OrcaAstIterationStatementNode *node) override {
+    node->getCondition()->accept(*this);
+    node->getBody()->accept(*this);
+    node->evaluatedType = T_void;
+    return std::any(node->evaluatedType);
+  };
+
   std::any visitFunctionDeclarationStatement(
       OrcaAstFunctionDeclarationNode *node) override {
 

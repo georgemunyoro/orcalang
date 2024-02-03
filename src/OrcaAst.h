@@ -407,6 +407,33 @@ private:
   OrcaAstExpressionNode *elseExpr;
 };
 
+class OrcaAstIterationStatementNode : public OrcaAstStatementNode {
+public:
+  OrcaAstIterationStatementNode(ParserRuleContext *pContext,
+                                OrcaAstExpressionNode *condition,
+                                OrcaAstStatementNode *body)
+      : condition(condition), body(body) {
+    this->parseContext = pContext;
+    evaluatedType = nullptr;
+  }
+
+  std::any accept(OrcaAstVisitor &visitor) override;
+  void print(int indent) override { printf("%s\n", toString(indent).c_str()); }
+
+  std::string toString(int indent) override {
+    return std::string(indent, ' ') + "IterationStatementNode " +
+           contextString() + "\n" + condition->toString(indent + 2) +
+           body->toString(indent + 2);
+  }
+
+  OrcaAstExpressionNode *getCondition() const { return condition; }
+  OrcaAstStatementNode *getBody() const { return body; }
+
+private:
+  OrcaAstExpressionNode *condition;
+  OrcaAstStatementNode *body;
+};
+
 class OrcaAstExpressionListNode : public OrcaAstExpressionNode {
 public:
   OrcaAstExpressionListNode(ParserRuleContext *pContext,
@@ -693,7 +720,10 @@ public:
 
   OrcaAstJumpStatementNode(ParserRuleContext *pContext,
                            const std::string &keyword)
-      : keyword(keyword), expr(nullptr) {}
+      : keyword(keyword), expr(nullptr) {
+    this->parseContext = pContext;
+    evaluatedType = nullptr;
+  }
 
   std::any accept(OrcaAstVisitor &visitor) override;
 

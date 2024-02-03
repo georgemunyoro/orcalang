@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cstdio>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 
 #include "OrcaAst.h"
@@ -444,9 +445,6 @@ std::any OrcaAstBuilder::visitPrimaryExpression(
                   "Encountered unknown primary expression. This is a bug.",
                   context->getStart()->getLine(),
                   context->getStart()->getCharPositionInLine());
-
-  // unreachable
-  exit(1);
 }
 
 std::any OrcaAstBuilder::visitStatement(OrcaParser::StatementContext *context) {
@@ -552,11 +550,13 @@ std::any OrcaAstBuilder::visitCompoundStatement(
 std::any
 OrcaAstBuilder::visitJumpStatement(OrcaParser::JumpStatementContext *context) {
   if (context->BREAK()) {
-    return std::any(new OrcaAstJumpStatementNode(context, "break"));
+    return std::any(
+        (OrcaAstNode *)new OrcaAstJumpStatementNode(context, "break"));
   }
 
   if (context->CONTINUE()) {
-    return std::any(new OrcaAstJumpStatementNode(context, "continue"));
+    return std::any(
+        (OrcaAstNode *)new OrcaAstJumpStatementNode(context, "continue"));
   }
 
   assert(context->RETURN());
@@ -616,4 +616,19 @@ std::any OrcaAstBuilder::visitSelectionStatement(
 
   return std::any((OrcaAstNode *)new OrcaAstSelectionStatementNode(
       context, condition, thenStatement, elseStatement));
+}
+
+std::any OrcaAstBuilder::visitIterationStatement(
+    OrcaParser::IterationStatementContext *context) {
+
+  if (context->WHILE()) {
+    auto condition =
+        std::any_cast<OrcaAstExpressionNode *>(visit(context->condition));
+    auto body = (OrcaAstStatementNode *)std::any_cast<OrcaAstNode *>(
+        visit(context->body));
+    return std::any((OrcaAstNode *)new OrcaAstIterationStatementNode(
+        context, condition, body));
+  }
+
+  throw std::runtime_error("TODO: visitIterationStatement");
 }

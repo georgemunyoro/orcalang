@@ -183,10 +183,7 @@ public:
   visitIfStatementBody(OrcaParser::IfStatementBodyContext *context) override;
 
   std::any visitIterationStatement(
-      OrcaParser::IterationStatementContext *context) override {
-    printf("visitIterationStatement\n");
-    throw "TODO";
-  };
+      OrcaParser::IterationStatementContext *context) override;
 
   std::any visitExpressionStatement(
       OrcaParser::ExpressionStatementContext *context) override;
