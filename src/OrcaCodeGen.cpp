@@ -256,6 +256,12 @@ std::any OrcaCodeGen::visitLetExpression(OrcaAstLetExpressionNode *node) {
 
 std::any
 OrcaCodeGen::visitIdentifierExpression(OrcaAstIdentifierExpressionNode *node) {
+
+  if (module->getFunction(node->getName())) {
+    // If the identifier is a function, return the function
+    return (llvm::Value *)module->getFunction(node->getName());
+  }
+
   if (!namedValues->isInScope(node->getName()))
     throw OrcaError(compileContext,
                     "Variable '" + node->getName() + "' not declared.",
@@ -393,10 +399,24 @@ OrcaCodeGen::visitIterationStatement(OrcaAstIterationStatementNode *node) {
   if (!currentFunction->getBasicBlockList().back().getTerminator())
     builder->CreateBr(condBlock);
 
-  contBlock->insertInto(currentFunction);
-  builder->SetInsertPoint(contBlock);
+  if (contBlock->hasNPredecessorsOrMore(1)) {
+    contBlock->insertInto(currentFunction);
+    builder->SetInsertPoint(contBlock);
+  }
 
   loopStack.pop_back();
 
   return std::any();
+}
+
+std::any OrcaCodeGen::visitFunctionCallExpression(
+    OrcaAstFunctionCallExpressionNode *node) {
+  auto func = (llvm::Function *)std::any_cast<llvm::Value *>(
+      node->getCallee()->accept(*this));
+
+  std::vector<llvm::Value *> args;
+  for (auto &arg : node->getArgs())
+    args.push_back(std::any_cast<llvm::Value *>(arg->accept(*this)));
+
+  return (llvm::Value *)builder->CreateCall(func, args);
 }

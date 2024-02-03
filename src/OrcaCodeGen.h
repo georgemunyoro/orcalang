@@ -120,6 +120,9 @@ public:
   std::any visitFunctionDeclarationStatement(
       OrcaAstFunctionDeclarationNode *node) override;
 
+  std::any
+  visitFunctionCallExpression(OrcaAstFunctionCallExpressionNode *node) override;
+
   std::any visitJumpStatement(OrcaAstJumpStatementNode *node) override;
 
   std::any

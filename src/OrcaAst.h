@@ -827,9 +827,9 @@ private:
 class OrcaAstFunctionCallExpressionNode : public OrcaAstExpressionNode {
 public:
   OrcaAstFunctionCallExpressionNode(ParserRuleContext *pContext,
-                                    OrcaAstExpressionNode *expr,
+                                    OrcaAstExpressionNode *callee,
                                     std::vector<OrcaAstExpressionNode *> args)
-      : expr(expr), args(args) {
+      : callee(callee), args(args) {
     this->parseContext = pContext;
     evaluatedType = nullptr;
   }
@@ -840,7 +840,7 @@ public:
     printf("%*sFunctionCallExpressionNode %s\n", indent, "",
            contextString().c_str());
     printf("%*sexpr:\n", indent + 2, "");
-    expr->print(indent + 4);
+    callee->print(indent + 4);
     printf("%*sargs:\n", indent + 2, "");
     for (auto &arg : args) {
       arg->print(indent + 4);
@@ -850,7 +850,7 @@ public:
   std::string toString(int indent) override {
     std::string result = std::string(indent, ' ') +
                          "FunctionCallExpressionNode " + contextString() +
-                         "\n" + expr->toString(indent + 2);
+                         "\n" + callee->toString(indent + 2);
 
     for (auto &arg : args)
       result += arg->toString(indent + 2);
@@ -858,8 +858,11 @@ public:
     return result;
   }
 
+  OrcaAstExpressionNode *getCallee() const { return callee; }
+  std::vector<OrcaAstExpressionNode *> getArgs() const { return args; }
+
 private:
-  OrcaAstExpressionNode *expr;
+  OrcaAstExpressionNode *callee;
   std::vector<OrcaAstExpressionNode *> args;
 };
 

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 #include "OrcaAst.h"
 #include "OrcaAstBuilder.h"
@@ -369,6 +370,31 @@ std::any OrcaAstBuilder::visitSizeofExpression(
 
 std::any OrcaAstBuilder::visitPostfixExpression(
     OrcaParser::PostfixExpressionContext *context) {
+
+  if (context->postfixExpression()) {
+    if (context->LPAREN()) {
+      auto callee = std::any_cast<OrcaAstExpressionNode *>(
+          visit(context->postfixExpression()));
+
+      std::vector<OrcaAstExpressionNode *> args;
+      if (context->argumentExpressionList()) {
+        for (auto &arg : context->argumentExpressionList()->expression()) {
+          auto node = visit(arg);
+          if (node.has_value()) {
+            args.push_back(std::any_cast<OrcaAstExpressionNode *>(node));
+          } else {
+            throw OrcaError(compileContext, "Expected expression.",
+                            context->getStart()->getLine(),
+                            context->getStart()->getCharPositionInLine());
+          }
+        }
+      }
+
+      return std::any(
+          (OrcaAstExpressionNode *)new OrcaAstFunctionCallExpressionNode(
+              context, callee, args));
+    }
+  }
 
   assert(context->primaryExpression());
 

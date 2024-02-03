@@ -244,6 +244,51 @@ class OrcaTypeChecker : OrcaAstVisitor {
     return std::any(functionType);
   };
 
+  std::any visitFunctionCallExpression(
+      OrcaAstFunctionCallExpressionNode *node) override {
+    auto callee = std::any_cast<OrcaType *>(node->getCallee()->accept(*this));
+
+    if (callee->getPointerType()
+            .getPointee()
+            ->getFunctionType()
+            .getParameterTypes()
+            .size() != node->getArgs().size()) {
+      throw OrcaError(
+          compileContext,
+          "Function call has incorrect number of arguments. Expected " +
+              std::to_string(
+                  callee->getFunctionType().getParameterTypes().size()) +
+              " but got " + std::to_string(node->getArgs().size()) + ".",
+          node->parseContext->getStart()->getLine(),
+          node->parseContext->getStart()->getCharPositionInLine());
+    }
+
+    for (size_t i = 0; i < node->getArgs().size(); ++i) {
+      auto argType =
+          std::any_cast<OrcaType *>(node->getArgs()[i]->accept(*this));
+      auto paramType = callee->getPointerType()
+                           .getPointee()
+                           ->getFunctionType()
+                           .getParameterTypes()[i];
+
+      if (!argType->isEqual(paramType)) {
+        throw OrcaError(
+            compileContext,
+            "Function call argument " + std::to_string(i) +
+                " has incorrect type. Expected '" + paramType->toString() +
+                "' but got '" + argType->toString() + "'.",
+            node->parseContext->getStart()->getLine(),
+            node->parseContext->getStart()->getCharPositionInLine());
+      }
+    }
+
+    node->evaluatedType = callee->getPointerType()
+                              .getPointee()
+                              ->getFunctionType()
+                              .getReturnType();
+    return std::any(node->evaluatedType);
+  }
+
   std::any visitJumpStatement(OrcaAstJumpStatementNode *node) override {
 
     if (node->keyword == "return") {
