@@ -93,6 +93,7 @@ add_executable(orca
               src/Operator/Binary/CmpLT.cpp
               src/Operator/Binary/CmpLE.cpp
               src/Operator/Binary/CmpNE.cpp
+              src/Operator/Binary/Mod.cpp
               src/Operator/Unary/BitNot.cpp
               src/Operator/Unary/Neg.cpp
               src/Operator/Unary/Not.cpp
@@ -134,6 +135,7 @@ add_executable(orca_test
               src/Operator/Binary/CmpLT.cpp
               src/Operator/Binary/CmpLE.cpp
               src/Operator/Binary/CmpNE.cpp
+              src/Operator/Binary/Mod.cpp
               src/Operator/Unary/BitNot.cpp
               src/Operator/Unary/Neg.cpp
               src/Operator/Unary/Not.cpp

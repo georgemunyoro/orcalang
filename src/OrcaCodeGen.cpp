@@ -106,6 +106,15 @@ std::any OrcaCodeGen::visitJumpStatement(OrcaAstJumpStatementNode *node) {
     return builder->CreateBr(loopStack.back().after);
   }
 
+  if (node->getKeyword() == "continue") {
+    if (loopStack.empty())
+      throw OrcaError(compileContext, "Continue statement not in a loop.",
+                      node->parseContext->getStart()->getLine(),
+                      node->parseContext->getStart()->getCharPositionInLine());
+
+    return builder->CreateBr(loopStack.back().header);
+  }
+
   throw OrcaError(compileContext,
                   "Unknown jump statement '" + node->getKeyword() +
                       "'. This is a bug.",

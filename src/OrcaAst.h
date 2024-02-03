@@ -19,6 +19,7 @@
 #include "Operator/Binary/Div.h"
 #include "Operator/Binary/LogicalAnd.h"
 #include "Operator/Binary/LogicalOr.h"
+#include "Operator/Binary/Mod.h"
 #include "Operator/Binary/Mul.h"
 #include "Operator/Binary/Sub.h"
 
@@ -229,6 +230,8 @@ public:
       op = orca::CmpNEOperator::getInstance();
     else if (opSymbol == "=")
       op = orca::AssignOperator::getInstance();
+    else if (opSymbol == "%")
+      op = orca::ModOperator::getInstance();
 
     // } else if (op == "*") {
     //   op = OrcaBinaryOperator::Multiply;
