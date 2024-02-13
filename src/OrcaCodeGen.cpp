@@ -9,6 +9,8 @@
 #include <cstdio>
 #include <cstdlib>
 
+using llvm::APInt;
+
 std::any OrcaCodeGen::visitProgram(OrcaAstProgramNode *node) {
   for (auto &node : node->getNodes())
     node->accept(*this);
@@ -453,7 +455,29 @@ std::any OrcaCodeGen::visitExpressionList(OrcaAstExpressionListNode *node) {
 std::any OrcaCodeGen::visitIndexExpression(OrcaAstIndexExpressionNode *node) {
   auto indexee = std::any_cast<llvm::Value *>(node->getExpr()->accept(*this));
   auto index = std::any_cast<llvm::Value *>(node->getIndex()->accept(*this));
-  auto gep = builder->CreateGEP(index->getType(), indexee, index);
+
+  auto elementType = indexee->getType()->getPointerElementType();
+
+  auto gep = builder->CreateGEP(elementType, indexee, index);
   auto load = builder->CreateLoad(gep->getType()->getPointerElementType(), gep);
   return (llvm::Value *)load;
+}
+
+std::any OrcaCodeGen::visitStringLiteralExpression(
+    OrcaAstStringLiteralExpressionNode *node) {
+  auto str = node->getValue();
+  // Remove the quotes
+  str = str.substr(1, str.size() - 2);
+
+  llvm::Function *currentFunction = builder->GetInsertBlock()->getParent();
+  llvm::IRBuilder<> tmpBuilder(&currentFunction->getEntryBlock(),
+                               currentFunction->getEntryBlock().begin());
+
+  auto zero = llvm::ConstantInt::get(*llvmContext, llvm::APInt(32, 0));
+
+  auto strGlobal = tmpBuilder.CreateGlobalStringPtr(str);
+  auto strPtr = tmpBuilder.CreateBitCast(
+      strGlobal, llvm::Type::getInt8PtrTy(*llvmContext));
+
+  return (llvm::Value *)strGlobal;
 }

@@ -976,6 +976,8 @@ public:
            contextString() + "\n";
   }
 
+  std::string getValue() const { return value; }
+
 private:
   std::string value;
 };

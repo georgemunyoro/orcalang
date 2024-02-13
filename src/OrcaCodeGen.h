@@ -139,10 +139,9 @@ public:
       OrcaAstFloatLiteralExpressionNode *node) override {
     throw "TODO";
   };
+
   std::any visitStringLiteralExpression(
-      OrcaAstStringLiteralExpressionNode *node) override {
-    throw "TODO";
-  };
+      OrcaAstStringLiteralExpressionNode *node) override;
 
   std::any visitBooleanLiteralExpression(
       OrcaAstBooleanLiteralExpressionNode *node) override;

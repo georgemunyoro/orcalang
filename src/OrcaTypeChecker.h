@@ -426,7 +426,15 @@ class OrcaTypeChecker : OrcaAstVisitor {
 
   std::any visitStringLiteralExpression(
       OrcaAstStringLiteralExpressionNode *node) override {
-    throw "TODO";
+
+    // Remove the quotes from the string
+    auto strValue = node->getValue().substr(1, node->getValue().size() - 2);
+
+    auto strType = new OrcaType(
+        OrcaArrayType(new OrcaType(OrcaIntegerType(false, 8)),
+                      (size_t)(strValue.size() + 1))); // +1 for null terminator
+    node->evaluatedType = strType;
+    return std::any(node->evaluatedType);
   };
 
   std::any visitBooleanLiteralExpression(
