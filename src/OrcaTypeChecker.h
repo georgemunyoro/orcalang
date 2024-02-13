@@ -1,6 +1,7 @@
 #pragma once
 
 #include <any>
+#include <string>
 #include <utility>
 
 #include "OrcaAst.h"
@@ -89,6 +90,44 @@ class OrcaTypeChecker : OrcaAstVisitor {
         }
         }
       }
+
+      if (lhs->is(OrcaTypeKind::Array)) {
+        if (!lhs->isEqual(rhs)) {
+          throw OrcaError(
+              compileContext,
+              "Cannot assign value of type '" + rhs->toString() +
+                  "' to type '" + lhs->toString() + "'.",
+              node->parseContext->getStart()->getLine(),
+              node->parseContext->getStart()->getCharPositionInLine());
+        }
+      }
+
+      if (lhs->getKind() == OrcaTypeKind::Pointer) {
+        switch (rhs->getKind()) {
+        case OrcaTypeKind::Pointer: {
+          if (!lhs->getPointerType().getPointee()->isEqual(
+                  rhs->getPointerType().getPointee())) {
+            throw OrcaError(
+                compileContext,
+                "Cannot assign value of type '" + rhs->toString() +
+                    "' to type '" + lhs->toString() + "'.",
+                node->parseContext->getStart()->getLine(),
+                node->parseContext->getStart()->getCharPositionInLine());
+          }
+          node->evaluatedType = lhs;
+          return std::any(node->evaluatedType);
+        }
+
+        default: {
+          throw OrcaError(
+              compileContext,
+              "Cannot assign value of type '" + rhs->toString() +
+                  "' to type '" + lhs->toString() + "'.",
+              node->parseContext->getStart()->getLine(),
+              node->parseContext->getStart()->getCharPositionInLine());
+        }
+        }
+      }
     }
 
     // Unreachable
@@ -144,7 +183,24 @@ class OrcaTypeChecker : OrcaAstVisitor {
   };
 
   std::any visitExpressionList(OrcaAstExpressionListNode *node) override {
-    throw "TODO";
+    std::vector<OrcaType *> elementTypes;
+    for (auto &expr : node->getElements()) {
+      auto t = std::any_cast<OrcaType *>(expr->accept(*this));
+      elementTypes.push_back(t);
+      if (elementTypes.size() > 0) {
+        if (!elementTypes.front()->isEqual(t)) {
+          throw OrcaError(
+              compileContext,
+              "All elements of an array must be of the same type.",
+              node->parseContext->getStart()->getLine(),
+              node->parseContext->getStart()->getCharPositionInLine());
+        }
+      }
+    }
+
+    node->evaluatedType =
+        new OrcaType(OrcaArrayType(elementTypes.front(), elementTypes.size()));
+    return node->evaluatedType;
   };
 
   std::any visitTypeDeclaration(OrcaAstTypeDeclarationNode *node) override {
@@ -248,6 +304,12 @@ class OrcaTypeChecker : OrcaAstVisitor {
       OrcaAstFunctionCallExpressionNode *node) override {
     auto callee = std::any_cast<OrcaType *>(node->getCallee()->accept(*this));
 
+    if (!callee->getPointerType().getPointee()->is(OrcaTypeKind::Function)) {
+      throw OrcaError(compileContext, "Trying to call a non-function type.",
+                      node->parseContext->getStart()->getLine(),
+                      node->parseContext->getStart()->getCharPositionInLine());
+    }
+
     if (callee->getPointerType()
             .getPointee()
             ->getFunctionType()
@@ -256,8 +318,11 @@ class OrcaTypeChecker : OrcaAstVisitor {
       throw OrcaError(
           compileContext,
           "Function call has incorrect number of arguments. Expected " +
-              std::to_string(
-                  callee->getFunctionType().getParameterTypes().size()) +
+              std::to_string(callee->getPointerType()
+                                 .getPointee()
+                                 ->getFunctionType()
+                                 .getParameterTypes()
+                                 .size()) +
               " but got " + std::to_string(node->getArgs().size()) + ".",
           node->parseContext->getStart()->getLine(),
           node->parseContext->getStart()->getCharPositionInLine());
@@ -401,6 +466,31 @@ class OrcaTypeChecker : OrcaAstVisitor {
     return node->evaluatedType;
   };
 
+  std::any visitIndexExpression(OrcaAstIndexExpressionNode *node) override {
+    auto arrayType = std::any_cast<OrcaType *>(node->getExpr()->accept(*this));
+    auto indexType = std::any_cast<OrcaType *>(node->getIndex()->accept(*this));
+
+    if (!arrayType->is(OrcaTypeKind::Array)) {
+      throw OrcaError(compileContext,
+                      "Indexing expression must be applied to an array. Got '" +
+                          arrayType->toString() + "'.",
+                      node->parseContext->getStart()->getLine(),
+                      node->parseContext->getStart()->getCharPositionInLine());
+    }
+
+    if (!indexType->is(OrcaTypeKind::Integer)) {
+      throw OrcaError(
+          compileContext,
+          "Indexing expression must be applied with an integer. Got '" +
+              indexType->toString() + "'.",
+          node->parseContext->getStart()->getLine(),
+          node->parseContext->getStart()->getCharPositionInLine());
+    }
+
+    node->evaluatedType = arrayType->getArrayType().getElementType();
+    return std::any(node->evaluatedType);
+  }
+
   std::any visitCastExpression(OrcaAstCastExpressionNode *node) override {
 
     auto type = std::any_cast<OrcaType *>(node->getType()->accept(*this));
@@ -482,6 +572,12 @@ class OrcaTypeChecker : OrcaAstVisitor {
     if (tContext->STAR()) {
       auto pointeeType = evaluateTypeContext(tContext->pointeeType);
       return new OrcaType(OrcaPointerType(pointeeType));
+    }
+
+    if (tContext->LBRACK()) {
+      auto elementType = evaluateTypeContext(tContext->elementType);
+      size_t arraySize = std::stoi(tContext->arraySize->getText());
+      return new OrcaType(OrcaArrayType(elementType, arraySize));
     }
 
     throw OrcaError(compileContext, "Unhandled type. This is a bug.",

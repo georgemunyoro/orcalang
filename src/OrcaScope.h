@@ -65,6 +65,13 @@ public:
    */
   OrcaScope<T> *getParent() { return parent; }
 
+  /**
+   * @brief Get a list of all symbols in the current scope.
+   *
+   * @return std::map<std::string, T> A map of all symbols in the current scope.
+   */
+  std::map<std::string, T> getSymbols() { return symbols; }
+
 private:
   OrcaScope *parent;
   std::map<std::string, T> symbols;

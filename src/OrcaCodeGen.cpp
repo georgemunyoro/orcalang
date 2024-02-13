@@ -3,6 +3,7 @@
 #include "OrcaError.h"
 #include "OrcaScope.h"
 #include "OrcaType.h"
+#include <alloca.h>
 #include <any>
 #include <cassert>
 #include <cstdio>
@@ -419,4 +420,40 @@ std::any OrcaCodeGen::visitFunctionCallExpression(
     args.push_back(std::any_cast<llvm::Value *>(arg->accept(*this)));
 
   return (llvm::Value *)builder->CreateCall(func, args);
+}
+
+std::any OrcaCodeGen::visitExpressionList(OrcaAstExpressionListNode *node) {
+  llvm::Function *currentFunction = builder->GetInsertBlock()->getParent();
+  llvm::IRBuilder<> tmpBuilder(&currentFunction->getEntryBlock(),
+                               currentFunction->getEntryBlock().begin());
+
+  auto elementType = generateType(node->getElements().at(0)->evaluatedType);
+  auto arrayType =
+      llvm::ArrayType::get(elementType, node->getElements().size());
+
+  llvm::AllocaInst *arrayAlloc = tmpBuilder.CreateAlloca(
+      arrayType, nullptr, getUniqueLabel("array.alloc"));
+
+  auto zero = llvm::ConstantInt::get(*llvmContext, llvm::APInt(32, 0));
+
+  for (size_t i = 0; i < node->getElements().size(); ++i) {
+    auto elementValue =
+        std::any_cast<llvm::Value *>(node->getElements().at(i)->accept(*this));
+
+    auto index = llvm::ConstantInt::get(*llvmContext, llvm::APInt(32, i));
+    auto gep = builder->CreateInBoundsGEP(arrayType, arrayAlloc, {zero, index});
+    auto store = builder->CreateStore(elementValue, gep);
+  }
+
+  auto firstElementPtr =
+      builder->CreateInBoundsGEP(arrayType, arrayAlloc, {zero, zero});
+  return (llvm::Value *)firstElementPtr;
+}
+
+std::any OrcaCodeGen::visitIndexExpression(OrcaAstIndexExpressionNode *node) {
+  auto indexee = std::any_cast<llvm::Value *>(node->getExpr()->accept(*this));
+  auto index = std::any_cast<llvm::Value *>(node->getIndex()->accept(*this));
+  auto gep = builder->CreateGEP(index->getType(), indexee, index);
+  auto load = builder->CreateLoad(gep->getType()->getPointerElementType(), gep);
+  return (llvm::Value *)load;
 }

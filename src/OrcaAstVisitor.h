@@ -43,4 +43,5 @@ public:
   visitIterationStatement(OrcaAstIterationStatementNode *node) = 0;
   virtual std::any
   visitFunctionCallExpression(OrcaAstFunctionCallExpressionNode *node) = 0;
+  virtual std::any visitIndexExpression(OrcaAstIndexExpressionNode *node) = 0;
 };

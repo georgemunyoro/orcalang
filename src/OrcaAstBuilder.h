@@ -114,10 +114,7 @@ public:
   visitLetExpression(OrcaParser::LetExpressionContext *context) override;
 
   std::any
-  visitArrayExpression(OrcaParser::ArrayExpressionContext *context) override {
-    printf("visitLetExpression\n");
-    throw "TODO";
-  };
+  visitArrayExpression(OrcaParser::ArrayExpressionContext *context) override;
 
   std::any visitFieldMap(OrcaParser::FieldMapContext *context) override {
     printf("visitFieldMap\n");

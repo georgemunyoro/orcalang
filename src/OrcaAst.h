@@ -469,6 +469,10 @@ public:
     return result;
   }
 
+  std::vector<OrcaAstExpressionNode *> getElements() const {
+    return expressions;
+  }
+
 private:
   std::vector<OrcaAstExpressionNode *> expressions;
 };
@@ -780,6 +784,9 @@ public:
     return std::string(indent, ' ') + "IndexExpressionNode " + contextString() +
            "\n" + expr->toString(indent + 2) + index->toString(indent + 2);
   }
+
+  OrcaAstExpressionNode *getExpr() const { return expr; }
+  OrcaAstExpressionNode *getIndex() const { return index; }
 
 private:
   OrcaAstExpressionNode *expr;

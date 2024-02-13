@@ -394,6 +394,18 @@ std::any OrcaAstBuilder::visitPostfixExpression(
           (OrcaAstExpressionNode *)new OrcaAstFunctionCallExpressionNode(
               context, callee, args));
     }
+
+    if (context->LBRACK()) {
+
+      assert(context->RBRACK());
+
+      auto array = std::any_cast<OrcaAstExpressionNode *>(
+          visit(context->postfixExpression()));
+      auto index =
+          std::any_cast<OrcaAstExpressionNode *>(visit(context->expression()));
+      auto indexExpr = new OrcaAstIndexExpressionNode(context, array, index);
+      return std::any((OrcaAstExpressionNode *)indexExpr);
+    }
   }
 
   assert(context->primaryExpression());
@@ -657,4 +669,13 @@ std::any OrcaAstBuilder::visitIterationStatement(
   }
 
   throw std::runtime_error("TODO: visitIterationStatement");
+}
+
+std::any OrcaAstBuilder::visitArrayExpression(
+    OrcaParser::ArrayExpressionContext *context) {
+  std::vector<OrcaAstExpressionNode *> expressions;
+  for (auto &expr : context->expressionList()->expression())
+    expressions.push_back(std::any_cast<OrcaAstExpressionNode *>(visit(expr)));
+  return std::any((OrcaAstExpressionNode *)new OrcaAstExpressionListNode(
+      context, expressions));
 }

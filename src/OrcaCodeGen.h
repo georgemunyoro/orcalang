@@ -103,9 +103,8 @@ public:
 
   std::any visitUnaryExpression(OrcaAstUnaryExpressionNode *node) override;
 
-  std::any visitExpressionList(OrcaAstExpressionListNode *node) override {
-    throw "TODO";
-  };
+  std::any visitExpressionList(OrcaAstExpressionListNode *node) override;
+
   std::any visitTypeDeclaration(OrcaAstTypeDeclarationNode *node) override {
     throw "TODO";
   };
@@ -154,6 +153,8 @@ public:
   std::any
   visitSelectionStatement(OrcaAstSelectionStatementNode *node) override;
 
+  std::any visitIndexExpression(OrcaAstIndexExpressionNode *node) override;
+
   std::any visitCastExpression(OrcaAstCastExpressionNode *node) override;
 
   llvm::Type *generateType(OrcaType *type) {
@@ -181,8 +182,19 @@ public:
     case OrcaTypeKind::Void:
       return llvm::Type::getVoidTy(*llvmContext);
 
+    case OrcaTypeKind::Pointer: {
+      auto pointeeType = generateType(type->getPointerType().getPointee());
+      auto pointerType = llvm::PointerType::get(pointeeType, 0);
+      return pointerType;
+    }
+
+    case OrcaTypeKind::Array: {
+      auto elementType = generateType(type->getArrayType().getElementType());
+      return llvm::PointerType::get(elementType, 0);
+    }
+
     default:
-      throw "TODO";
+      throw std::runtime_error("Unknown type");
     }
   }
 
@@ -191,7 +203,7 @@ public:
       node->accept(*this);
       llvm::verifyModule(*module, &llvm::errs());
 
-      if (false) {
+      if (true) {
 
         // TODO: Move this into it's own module. This isn't scalable,
         // and doesn't allow for multiple compilation units. We need to
@@ -253,6 +265,17 @@ public:
       }
     } catch (OrcaError &error) {
       error.print();
+    }
+  }
+
+  void printVariables() {
+    for (auto &variable : namedValues->getSymbols()) {
+      // Print name, type, and value
+      printf("%s \n", variable.first.c_str());
+      variable.second->getType()->print(llvm::errs());
+      printf(" : ");
+      variable.second->print(llvm::errs());
+      printf("\n");
     }
   }
 
