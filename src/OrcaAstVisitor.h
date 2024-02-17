@@ -1,6 +1,7 @@
 #pragma once
 
 #include "OrcaAst.h"
+#include <any>
 
 class OrcaAstVisitor {
 public:
@@ -38,4 +39,9 @@ public:
   virtual std::any visitCastExpression(OrcaAstCastExpressionNode *node) = 0;
   virtual std::any
   visitSelectionStatement(OrcaAstSelectionStatementNode *node) = 0;
+  virtual std::any
+  visitIterationStatement(OrcaAstIterationStatementNode *node) = 0;
+  virtual std::any
+  visitFunctionCallExpression(OrcaAstFunctionCallExpressionNode *node) = 0;
+  virtual std::any visitIndexExpression(OrcaAstIndexExpressionNode *node) = 0;
 };

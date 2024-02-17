@@ -172,15 +172,13 @@ unaryOperator: '&' | '*' | '+' | '-' | '~' | '!' | '++' | '--';
  * A postfix expression is a primary expression followed by zero or more postfix operators.
  */
 postfixExpression:
-	primaryExpression (
-		'[' index = expression ']'
-		| '.' field = Identifier
-		| '->' field = Identifier
-		| '(' args = argumentExpressionList ')'
-		| '(' ')'
-		| '++'
-		| '--'
-	)*;
+	primaryExpression
+	| postfixExpression '[' index = expression ']'
+	| postfixExpression '.' field = Identifier
+	| postfixExpression '->' field = Identifier
+	| postfixExpression '(' args = argumentExpressionList ')'
+	| postfixExpression '++'
+	| postfixExpression '--';
 
 argumentExpressionList: expression (',' expression)*;
 

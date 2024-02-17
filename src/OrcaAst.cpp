@@ -85,3 +85,15 @@ std::any OrcaAstCastExpressionNode::accept(OrcaAstVisitor &visitor) {
 std::any OrcaAstSelectionStatementNode::accept(OrcaAstVisitor &visitor) {
   return visitor.visitSelectionStatement(this);
 }
+
+std::any OrcaAstIterationStatementNode::accept(OrcaAstVisitor &visitor) {
+  return visitor.visitIterationStatement(this);
+}
+
+std::any OrcaAstFunctionCallExpressionNode::accept(OrcaAstVisitor &visitor) {
+  return visitor.visitFunctionCallExpression(this);
+}
+
+std::any OrcaAstIndexExpressionNode::accept(OrcaAstVisitor &visitor) {
+  return visitor.visitIndexExpression(this);
+}

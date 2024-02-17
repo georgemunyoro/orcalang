@@ -43,6 +43,12 @@
 #include "OrcaScope.h"
 #include "OrcaType.h"
 
+typedef struct {
+  llvm::BasicBlock *header;
+  llvm::BasicBlock *body;
+  llvm::BasicBlock *after;
+} LoopInfo;
+
 class OrcaContext;
 
 class OrcaCodeGen : public OrcaAstVisitor {
@@ -97,9 +103,8 @@ public:
 
   std::any visitUnaryExpression(OrcaAstUnaryExpressionNode *node) override;
 
-  std::any visitExpressionList(OrcaAstExpressionListNode *node) override {
-    throw "TODO";
-  };
+  std::any visitExpressionList(OrcaAstExpressionListNode *node) override;
+
   std::any visitTypeDeclaration(OrcaAstTypeDeclarationNode *node) override {
     throw "TODO";
   };
@@ -114,7 +119,13 @@ public:
   std::any visitFunctionDeclarationStatement(
       OrcaAstFunctionDeclarationNode *node) override;
 
+  std::any
+  visitFunctionCallExpression(OrcaAstFunctionCallExpressionNode *node) override;
+
   std::any visitJumpStatement(OrcaAstJumpStatementNode *node) override;
+
+  std::any
+  visitIterationStatement(OrcaAstIterationStatementNode *node) override;
 
   std::any visitBinaryExpression(OrcaAstBinaryExpressionNode *node) override;
 
@@ -128,10 +139,9 @@ public:
       OrcaAstFloatLiteralExpressionNode *node) override {
     throw "TODO";
   };
+
   std::any visitStringLiteralExpression(
-      OrcaAstStringLiteralExpressionNode *node) override {
-    throw "TODO";
-  };
+      OrcaAstStringLiteralExpressionNode *node) override;
 
   std::any visitBooleanLiteralExpression(
       OrcaAstBooleanLiteralExpressionNode *node) override;
@@ -141,6 +151,8 @@ public:
 
   std::any
   visitSelectionStatement(OrcaAstSelectionStatementNode *node) override;
+
+  std::any visitIndexExpression(OrcaAstIndexExpressionNode *node) override;
 
   std::any visitCastExpression(OrcaAstCastExpressionNode *node) override;
 
@@ -169,8 +181,19 @@ public:
     case OrcaTypeKind::Void:
       return llvm::Type::getVoidTy(*llvmContext);
 
+    case OrcaTypeKind::Pointer: {
+      auto pointeeType = generateType(type->getPointerType().getPointee());
+      auto pointerType = llvm::PointerType::get(pointeeType, 0);
+      return pointerType;
+    }
+
+    case OrcaTypeKind::Array: {
+      auto elementType = generateType(type->getArrayType().getElementType());
+      return llvm::PointerType::get(elementType, 0);
+    }
+
     default:
-      throw "TODO";
+      throw std::runtime_error("Unknown type");
     }
   }
 
@@ -179,7 +202,7 @@ public:
       node->accept(*this);
       llvm::verifyModule(*module, &llvm::errs());
 
-      if (false) {
+      if (true) {
 
         // TODO: Move this into it's own module. This isn't scalable,
         // and doesn't allow for multiple compilation units. We need to
@@ -244,6 +267,17 @@ public:
     }
   }
 
+  void printVariables() {
+    for (auto &variable : namedValues->getSymbols()) {
+      // Print name, type, and value
+      printf("%s \n", variable.first.c_str());
+      variable.second->getType()->print(llvm::errs());
+      printf(" : ");
+      variable.second->print(llvm::errs());
+      printf("\n");
+    }
+  }
+
   std::unique_ptr<llvm::LLVMContext> llvmContext;
   std::unique_ptr<OrcaLLVMBuilder> builder;
   // std::unique_ptr<llvm::Module> module;
@@ -261,6 +295,9 @@ public:
   std::unique_ptr<llvm::ModuleAnalysisManager> mam;
   std::unique_ptr<llvm::CGSCCAnalysisManager> cgam;
   std::unique_ptr<llvm::LoopAnalysisManager> lam;
+
+  // Stores information about the current loop
+  std::vector<LoopInfo> loopStack;
 
   OrcaScope<llvm::AllocaInst *> *namedValues =
       new OrcaScope<llvm::AllocaInst *>();

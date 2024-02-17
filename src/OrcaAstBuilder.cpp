@@ -2,7 +2,9 @@
 #include <cassert>
 #include <cstdio>
 #include <iostream>
+#include <stdexcept>
 #include <string>
+#include <utility>
 
 #include "OrcaAst.h"
 #include "OrcaAstBuilder.h"
@@ -369,6 +371,43 @@ std::any OrcaAstBuilder::visitSizeofExpression(
 std::any OrcaAstBuilder::visitPostfixExpression(
     OrcaParser::PostfixExpressionContext *context) {
 
+  if (context->postfixExpression()) {
+    if (context->LPAREN()) {
+      auto callee = std::any_cast<OrcaAstExpressionNode *>(
+          visit(context->postfixExpression()));
+
+      std::vector<OrcaAstExpressionNode *> args;
+      if (context->argumentExpressionList()) {
+        for (auto &arg : context->argumentExpressionList()->expression()) {
+          auto node = visit(arg);
+          if (node.has_value()) {
+            args.push_back(std::any_cast<OrcaAstExpressionNode *>(node));
+          } else {
+            throw OrcaError(compileContext, "Expected expression.",
+                            context->getStart()->getLine(),
+                            context->getStart()->getCharPositionInLine());
+          }
+        }
+      }
+
+      return std::any(
+          (OrcaAstExpressionNode *)new OrcaAstFunctionCallExpressionNode(
+              context, callee, args));
+    }
+
+    if (context->LBRACK()) {
+
+      assert(context->RBRACK());
+
+      auto array = std::any_cast<OrcaAstExpressionNode *>(
+          visit(context->postfixExpression()));
+      auto index =
+          std::any_cast<OrcaAstExpressionNode *>(visit(context->expression()));
+      auto indexExpr = new OrcaAstIndexExpressionNode(context, array, index);
+      return std::any((OrcaAstExpressionNode *)indexExpr);
+    }
+  }
+
   assert(context->primaryExpression());
 
   OrcaAstExpressionNode *expr = std::any_cast<OrcaAstExpressionNode *>(
@@ -444,9 +483,6 @@ std::any OrcaAstBuilder::visitPrimaryExpression(
                   "Encountered unknown primary expression. This is a bug.",
                   context->getStart()->getLine(),
                   context->getStart()->getCharPositionInLine());
-
-  // unreachable
-  exit(1);
 }
 
 std::any OrcaAstBuilder::visitStatement(OrcaParser::StatementContext *context) {
@@ -552,11 +588,13 @@ std::any OrcaAstBuilder::visitCompoundStatement(
 std::any
 OrcaAstBuilder::visitJumpStatement(OrcaParser::JumpStatementContext *context) {
   if (context->BREAK()) {
-    return std::any(new OrcaAstJumpStatementNode(context, "break"));
+    return std::any(
+        (OrcaAstNode *)new OrcaAstJumpStatementNode(context, "break"));
   }
 
   if (context->CONTINUE()) {
-    return std::any(new OrcaAstJumpStatementNode(context, "continue"));
+    return std::any(
+        (OrcaAstNode *)new OrcaAstJumpStatementNode(context, "continue"));
   }
 
   assert(context->RETURN());
@@ -616,4 +654,28 @@ std::any OrcaAstBuilder::visitSelectionStatement(
 
   return std::any((OrcaAstNode *)new OrcaAstSelectionStatementNode(
       context, condition, thenStatement, elseStatement));
+}
+
+std::any OrcaAstBuilder::visitIterationStatement(
+    OrcaParser::IterationStatementContext *context) {
+
+  if (context->WHILE()) {
+    auto condition =
+        std::any_cast<OrcaAstExpressionNode *>(visit(context->condition));
+    auto body = (OrcaAstStatementNode *)std::any_cast<OrcaAstNode *>(
+        visit(context->body));
+    return std::any((OrcaAstNode *)new OrcaAstIterationStatementNode(
+        context, condition, body));
+  }
+
+  throw std::runtime_error("TODO: visitIterationStatement");
+}
+
+std::any OrcaAstBuilder::visitArrayExpression(
+    OrcaParser::ArrayExpressionContext *context) {
+  std::vector<OrcaAstExpressionNode *> expressions;
+  for (auto &expr : context->expressionList()->expression())
+    expressions.push_back(std::any_cast<OrcaAstExpressionNode *>(visit(expr)));
+  return std::any((OrcaAstExpressionNode *)new OrcaAstExpressionListNode(
+      context, expressions));
 }

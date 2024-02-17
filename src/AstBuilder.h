@@ -140,7 +140,7 @@ public:
 
   std::any
   visitArrayExpression(OrcaParser::ArrayExpressionContext *context) override {
-    printf("visitLetExpression\n");
+    printf("visitArrayExpression %s\n", context->toStringTree().c_str());
     throw "TODO";
   };
 

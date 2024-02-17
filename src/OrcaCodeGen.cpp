@@ -3,10 +3,13 @@
 #include "OrcaError.h"
 #include "OrcaScope.h"
 #include "OrcaType.h"
+#include <alloca.h>
 #include <any>
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
+
+using llvm::APInt;
 
 std::any OrcaCodeGen::visitProgram(OrcaAstProgramNode *node) {
   for (auto &node : node->getNodes())
@@ -95,6 +98,24 @@ std::any OrcaCodeGen::visitJumpStatement(OrcaAstJumpStatementNode *node) {
     auto returnValue =
         std::any_cast<llvm::Value *>(node->getExpr()->accept(*this));
     return builder->CreateRet(returnValue);
+  }
+
+  if (node->getKeyword() == "break") {
+    if (loopStack.empty())
+      throw OrcaError(compileContext, "Break statement not in a loop.",
+                      node->parseContext->getStart()->getLine(),
+                      node->parseContext->getStart()->getCharPositionInLine());
+
+    return builder->CreateBr(loopStack.back().after);
+  }
+
+  if (node->getKeyword() == "continue") {
+    if (loopStack.empty())
+      throw OrcaError(compileContext, "Continue statement not in a loop.",
+                      node->parseContext->getStart()->getLine(),
+                      node->parseContext->getStart()->getCharPositionInLine());
+
+    return builder->CreateBr(loopStack.back().header);
   }
 
   throw OrcaError(compileContext,
@@ -238,6 +259,12 @@ std::any OrcaCodeGen::visitLetExpression(OrcaAstLetExpressionNode *node) {
 
 std::any
 OrcaCodeGen::visitIdentifierExpression(OrcaAstIdentifierExpressionNode *node) {
+
+  if (module->getFunction(node->getName())) {
+    // If the identifier is a function, return the function
+    return (llvm::Value *)module->getFunction(node->getName());
+  }
+
   if (!namedValues->isInScope(node->getName()))
     throw OrcaError(compileContext,
                     "Variable '" + node->getName() + "' not declared.",
@@ -338,4 +365,119 @@ std::any OrcaCodeGen::visitConditionalExpression(
   auto loadInst = builder->CreateLoad(alloca->getAllocatedType(), alloca);
 
   return (llvm::Value *)loadInst;
+}
+
+std::any
+OrcaCodeGen::visitIterationStatement(OrcaAstIterationStatementNode *node) {
+  llvm::Function *currentFunction = builder->GetInsertBlock()->getParent();
+  if (!currentFunction) {
+    throw OrcaError(compileContext,
+                    "Iteration statements are not supported in global scope.",
+                    node->parseContext->getStart()->getLine(),
+                    node->parseContext->getStart()->getCharPositionInLine());
+  }
+
+  llvm::BasicBlock *condBlock = llvm::BasicBlock::Create(
+      *llvmContext, getUniqueLabel("w.cond"), currentFunction);
+  llvm::BasicBlock *bodyBlock =
+      llvm::BasicBlock::Create(*llvmContext, getUniqueLabel("w.body"));
+  llvm::BasicBlock *contBlock =
+      llvm::BasicBlock::Create(*llvmContext, getUniqueLabel("w.cont"));
+
+  loopStack.push_back({
+      .header = condBlock,
+      .body = bodyBlock,
+      .after = contBlock,
+  });
+
+  builder->CreateBr(condBlock);
+  builder->SetInsertPoint(condBlock);
+  builder->CreateCondBr(
+      std::any_cast<llvm::Value *>(node->getCondition()->accept(*this)),
+      bodyBlock, contBlock);
+
+  bodyBlock->insertInto(currentFunction);
+  builder->SetInsertPoint(bodyBlock);
+  node->getBody()->accept(*this);
+  if (!currentFunction->getBasicBlockList().back().getTerminator())
+    builder->CreateBr(condBlock);
+
+  if (contBlock->hasNPredecessorsOrMore(1)) {
+    contBlock->insertInto(currentFunction);
+    builder->SetInsertPoint(contBlock);
+  }
+
+  loopStack.pop_back();
+
+  return std::any();
+}
+
+std::any OrcaCodeGen::visitFunctionCallExpression(
+    OrcaAstFunctionCallExpressionNode *node) {
+  auto func = (llvm::Function *)std::any_cast<llvm::Value *>(
+      node->getCallee()->accept(*this));
+
+  std::vector<llvm::Value *> args;
+  for (auto &arg : node->getArgs())
+    args.push_back(std::any_cast<llvm::Value *>(arg->accept(*this)));
+
+  return (llvm::Value *)builder->CreateCall(func, args);
+}
+
+std::any OrcaCodeGen::visitExpressionList(OrcaAstExpressionListNode *node) {
+  llvm::Function *currentFunction = builder->GetInsertBlock()->getParent();
+  llvm::IRBuilder<> tmpBuilder(&currentFunction->getEntryBlock(),
+                               currentFunction->getEntryBlock().begin());
+
+  auto elementType = generateType(node->getElements().at(0)->evaluatedType);
+  auto arrayType =
+      llvm::ArrayType::get(elementType, node->getElements().size());
+
+  llvm::AllocaInst *arrayAlloc = tmpBuilder.CreateAlloca(
+      arrayType, nullptr, getUniqueLabel("array.alloc"));
+
+  auto zero = llvm::ConstantInt::get(*llvmContext, llvm::APInt(32, 0));
+
+  for (size_t i = 0; i < node->getElements().size(); ++i) {
+    auto elementValue =
+        std::any_cast<llvm::Value *>(node->getElements().at(i)->accept(*this));
+
+    auto index = llvm::ConstantInt::get(*llvmContext, llvm::APInt(32, i));
+    auto gep = builder->CreateInBoundsGEP(arrayType, arrayAlloc, {zero, index});
+    auto store = builder->CreateStore(elementValue, gep);
+  }
+
+  auto firstElementPtr =
+      builder->CreateInBoundsGEP(arrayType, arrayAlloc, {zero, zero});
+  return (llvm::Value *)firstElementPtr;
+}
+
+std::any OrcaCodeGen::visitIndexExpression(OrcaAstIndexExpressionNode *node) {
+  auto indexee = std::any_cast<llvm::Value *>(node->getExpr()->accept(*this));
+  auto index = std::any_cast<llvm::Value *>(node->getIndex()->accept(*this));
+
+  auto elementType = indexee->getType()->getPointerElementType();
+
+  auto gep = builder->CreateGEP(elementType, indexee, index);
+  auto load = builder->CreateLoad(gep->getType()->getPointerElementType(), gep);
+  return (llvm::Value *)load;
+}
+
+std::any OrcaCodeGen::visitStringLiteralExpression(
+    OrcaAstStringLiteralExpressionNode *node) {
+  auto str = node->getValue();
+  // Remove the quotes
+  str = str.substr(1, str.size() - 2);
+
+  llvm::Function *currentFunction = builder->GetInsertBlock()->getParent();
+  llvm::IRBuilder<> tmpBuilder(&currentFunction->getEntryBlock(),
+                               currentFunction->getEntryBlock().begin());
+
+  auto zero = llvm::ConstantInt::get(*llvmContext, llvm::APInt(32, 0));
+
+  auto strGlobal = tmpBuilder.CreateGlobalStringPtr(str);
+  auto strPtr = tmpBuilder.CreateBitCast(
+      strGlobal, llvm::Type::getInt8PtrTy(*llvmContext));
+
+  return (llvm::Value *)strGlobal;
 }

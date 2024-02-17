@@ -19,6 +19,7 @@
 #include "Operator/Binary/Div.h"
 #include "Operator/Binary/LogicalAnd.h"
 #include "Operator/Binary/LogicalOr.h"
+#include "Operator/Binary/Mod.h"
 #include "Operator/Binary/Mul.h"
 #include "Operator/Binary/Sub.h"
 
@@ -229,6 +230,8 @@ public:
       op = orca::CmpNEOperator::getInstance();
     else if (opSymbol == "=")
       op = orca::AssignOperator::getInstance();
+    else if (opSymbol == "%")
+      op = orca::ModOperator::getInstance();
 
     // } else if (op == "*") {
     //   op = OrcaBinaryOperator::Multiply;
@@ -407,6 +410,33 @@ private:
   OrcaAstExpressionNode *elseExpr;
 };
 
+class OrcaAstIterationStatementNode : public OrcaAstStatementNode {
+public:
+  OrcaAstIterationStatementNode(ParserRuleContext *pContext,
+                                OrcaAstExpressionNode *condition,
+                                OrcaAstStatementNode *body)
+      : condition(condition), body(body) {
+    this->parseContext = pContext;
+    evaluatedType = nullptr;
+  }
+
+  std::any accept(OrcaAstVisitor &visitor) override;
+  void print(int indent) override { printf("%s\n", toString(indent).c_str()); }
+
+  std::string toString(int indent) override {
+    return std::string(indent, ' ') + "IterationStatementNode " +
+           contextString() + "\n" + condition->toString(indent + 2) +
+           body->toString(indent + 2);
+  }
+
+  OrcaAstExpressionNode *getCondition() const { return condition; }
+  OrcaAstStatementNode *getBody() const { return body; }
+
+private:
+  OrcaAstExpressionNode *condition;
+  OrcaAstStatementNode *body;
+};
+
 class OrcaAstExpressionListNode : public OrcaAstExpressionNode {
 public:
   OrcaAstExpressionListNode(ParserRuleContext *pContext,
@@ -437,6 +467,10 @@ public:
       result += expression->toString(indent + 2);
 
     return result;
+  }
+
+  std::vector<OrcaAstExpressionNode *> getElements() const {
+    return expressions;
   }
 
 private:
@@ -693,7 +727,10 @@ public:
 
   OrcaAstJumpStatementNode(ParserRuleContext *pContext,
                            const std::string &keyword)
-      : keyword(keyword), expr(nullptr) {}
+      : keyword(keyword), expr(nullptr) {
+    this->parseContext = pContext;
+    evaluatedType = nullptr;
+  }
 
   std::any accept(OrcaAstVisitor &visitor) override;
 
@@ -748,6 +785,9 @@ public:
            "\n" + expr->toString(indent + 2) + index->toString(indent + 2);
   }
 
+  OrcaAstExpressionNode *getExpr() const { return expr; }
+  OrcaAstExpressionNode *getIndex() const { return index; }
+
 private:
   OrcaAstExpressionNode *expr;
   OrcaAstExpressionNode *index;
@@ -794,9 +834,9 @@ private:
 class OrcaAstFunctionCallExpressionNode : public OrcaAstExpressionNode {
 public:
   OrcaAstFunctionCallExpressionNode(ParserRuleContext *pContext,
-                                    OrcaAstExpressionNode *expr,
+                                    OrcaAstExpressionNode *callee,
                                     std::vector<OrcaAstExpressionNode *> args)
-      : expr(expr), args(args) {
+      : callee(callee), args(args) {
     this->parseContext = pContext;
     evaluatedType = nullptr;
   }
@@ -807,7 +847,7 @@ public:
     printf("%*sFunctionCallExpressionNode %s\n", indent, "",
            contextString().c_str());
     printf("%*sexpr:\n", indent + 2, "");
-    expr->print(indent + 4);
+    callee->print(indent + 4);
     printf("%*sargs:\n", indent + 2, "");
     for (auto &arg : args) {
       arg->print(indent + 4);
@@ -817,7 +857,7 @@ public:
   std::string toString(int indent) override {
     std::string result = std::string(indent, ' ') +
                          "FunctionCallExpressionNode " + contextString() +
-                         "\n" + expr->toString(indent + 2);
+                         "\n" + callee->toString(indent + 2);
 
     for (auto &arg : args)
       result += arg->toString(indent + 2);
@@ -825,8 +865,11 @@ public:
     return result;
   }
 
+  OrcaAstExpressionNode *getCallee() const { return callee; }
+  std::vector<OrcaAstExpressionNode *> getArgs() const { return args; }
+
 private:
-  OrcaAstExpressionNode *expr;
+  OrcaAstExpressionNode *callee;
   std::vector<OrcaAstExpressionNode *> args;
 };
 
@@ -932,6 +975,8 @@ public:
     return std::string(indent, ' ') + "StringLiteralExpressionNode " +
            contextString() + "\n";
   }
+
+  std::string getValue() const { return value; }
 
 private:
   std::string value;

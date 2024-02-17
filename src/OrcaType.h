@@ -63,6 +63,7 @@ public:
   OrcaPointerType(OrcaType *pointee) : pointee(pointee) {}
 
   OrcaTypeKind getKind() const { return OrcaTypeKind::Pointer; }
+  OrcaType *getPointee() const { return pointee; }
 
 private:
   OrcaType *pointee;
@@ -76,6 +77,8 @@ public:
       : elementType(elementType), length(length) {}
 
   OrcaTypeKind getKind() const { return OrcaTypeKind::Array; }
+  size_t getLength() const { return length; }
+  OrcaType *getElementType() const { return elementType; }
 
 private:
   OrcaType *elementType;
