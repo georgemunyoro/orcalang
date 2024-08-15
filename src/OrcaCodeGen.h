@@ -106,8 +106,9 @@ public:
   std::any visitExpressionList(OrcaAstExpressionListNode *node) override;
 
   std::any visitTypeDeclaration(OrcaAstTypeDeclarationNode *node) override {
-    throw "TODO";
+    return std::any();
   };
+
   std::any visitTemplateTypeDeclaration(
       OrcaAstTemplateTypeDeclarationNode *node) override {
     throw "TODO";
@@ -156,6 +157,9 @@ public:
 
   std::any visitCastExpression(OrcaAstCastExpressionNode *node) override;
 
+  std::any
+  visitMemberAccessExpression(OrcaAstMemberAccessExpressionNode *node) override;
+
   llvm::Type *generateType(OrcaType *type) {
     switch (type->getKind()) {
 
@@ -190,6 +194,14 @@ public:
     case OrcaTypeKind::Array: {
       auto elementType = generateType(type->getArrayType().getElementType());
       return llvm::PointerType::get(elementType, 0);
+    }
+
+    case OrcaTypeKind::Struct: {
+      auto structType = type->getStructType();
+      std::vector<llvm::Type *> elementTypes;
+      for (const auto &field : structType.getFields())
+        elementTypes.push_back(generateType(field.second));
+      return llvm::StructType::create(*llvmContext, elementTypes);
     }
 
     default:
@@ -312,5 +324,9 @@ public:
   std::unordered_map<std::string, int> uniqueLabelCounter;
 
 private:
+  llvm::Value *gen(OrcaAstNode *node) {
+    return std::any_cast<llvm::Value *>(node->accept(*this));
+  }
+
   OrcaContext &compileContext;
 };

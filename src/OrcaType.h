@@ -108,6 +108,10 @@ public:
 
   OrcaTypeKind getKind() const { return OrcaTypeKind::Struct; }
 
+  std::vector<std::pair<std::string, OrcaType *>> getFields() const {
+    return fields;
+  }
+
 private:
   std::vector<std::pair<std::string, OrcaType *>> fields;
 
@@ -194,6 +198,53 @@ public:
   static OrcaType
   Struct(std::vector<std::pair<std::string, OrcaType *>> fields) {
     return OrcaType(OrcaStructType(fields));
+  }
+
+  size_t getStructFieldIndex(const std::string &field) const {
+    if (!isDotAccessible())
+      return -1;
+
+    for (size_t i = 0; i < structType.fields.size(); ++i) {
+      if (structType.fields.at(i).first == field)
+        return i;
+    }
+
+    return -1;
+  }
+
+  OrcaType *getStructField(const std::string &field) const {
+    if (!isDotAccessible())
+      return nullptr;
+
+    for (auto f : structType.fields) {
+      if (f.first == field)
+        return f.second;
+    }
+
+    return nullptr;
+  }
+
+  bool isDotAccessible() const { return kind == OrcaTypeKind::Struct; }
+  bool isArrowAccessible() const { return kind == OrcaTypeKind::Pointer; }
+  bool isIndexable() const { return kind == OrcaTypeKind::Array; }
+
+  bool isValidDotAccess(const std::string &field) const {
+    if (!isDotAccessible())
+      return false;
+
+    for (auto f : structType.fields) {
+      if (f.first == field)
+        return true;
+    }
+
+    return false;
+  }
+
+  bool isValidArrowAccess(const std::string &field) const {
+    if (!isArrowAccessible())
+      return false;
+
+    return pointerType.pointee->isValidDotAccess(field);
   }
 
   OrcaTypeKind getKind() const { return kind; }

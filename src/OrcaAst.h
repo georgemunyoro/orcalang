@@ -499,6 +499,9 @@ public:
            KNRM + " " + contextString() + "\n" + type->toString(indent + 2);
   }
 
+  std::string getName() const { return name; }
+  OrcaAstTypeNode *getType() const { return type; }
+
 private:
   std::string name;
   OrcaAstTypeNode *type;
@@ -825,6 +828,10 @@ public:
            contextString() + "\n" + expr->toString(indent + 2);
   }
 
+  OrcaAstExpressionNode *getExpr() const { return expr; }
+  std::string getMember() const { return member; }
+  OrcaAstMemberAccessKind getKind() const { return kind; }
+
 private:
   OrcaAstExpressionNode *expr;
   std::string member;
@@ -1065,4 +1072,47 @@ public:
 private:
   OrcaAstTypeNode *type;
   OrcaAstExpressionNode *expr;
+};
+
+class OrcaAstFieldMapNode : public OrcaAstNode {
+public:
+  OrcaAstFieldMapNode(ParserRuleContext *pContext,
+                      std::map<std::string, OrcaAstExpressionNode *> fields)
+      : fields(fields) {
+    this->parseContext = pContext;
+    evaluatedType = nullptr;
+  }
+
+  std::any accept(OrcaAstVisitor &visitor) override;
+
+  void addField(const std::string &name, OrcaAstExpressionNode *expr) {
+    fields[name] = expr;
+  }
+
+  void print(int indent) override {
+    printf("%*sFieldMapNode %s\n", indent, "", contextString().c_str());
+    for (auto &field : fields) {
+      printf("%*s%s:\n", indent + 2, "", field.first.c_str());
+      field.second->print(indent + 4);
+    }
+  }
+
+  std::string toString(int indent) override {
+    std::string result =
+        std::string(indent, ' ') + "FieldMapNode " + contextString() + "\n";
+
+    for (auto &field : fields) {
+      result += std::string(indent + 2, ' ') + field.first + ":\n";
+      result += field.second->toString(indent + 4);
+    }
+
+    return result;
+  }
+
+  std::map<std::string, OrcaAstExpressionNode *> getFields() const {
+    return fields;
+  }
+
+private:
+  std::map<std::string, OrcaAstExpressionNode *> fields;
 };

@@ -406,6 +406,21 @@ std::any OrcaAstBuilder::visitPostfixExpression(
       auto indexExpr = new OrcaAstIndexExpressionNode(context, array, index);
       return std::any((OrcaAstExpressionNode *)indexExpr);
     }
+
+    if (context->DOT() || context->ARROW()) {
+      const auto field = context->field->getText();
+      const auto memberExpr = std::any_cast<OrcaAstExpressionNode *>(
+          visit(context->postfixExpression()));
+
+      auto expr = new OrcaAstMemberAccessExpressionNode(
+          context, memberExpr, field,
+          context->DOT()
+              ? OrcaAstMemberAccessExpressionNode::OrcaAstMemberAccessKind::Dot
+              : OrcaAstMemberAccessExpressionNode::OrcaAstMemberAccessKind::
+                    Arrow);
+
+      return std::any((OrcaAstExpressionNode *)expr);
+    }
   }
 
   assert(context->primaryExpression());

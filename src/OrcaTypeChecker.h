@@ -1,6 +1,7 @@
 #pragma once
 
 #include <any>
+#include <set>
 #include <string>
 #include <utility>
 
@@ -204,7 +205,10 @@ class OrcaTypeChecker : OrcaAstVisitor {
   };
 
   std::any visitTypeDeclaration(OrcaAstTypeDeclarationNode *node) override {
-    throw "TODO";
+    node->getType()->accept(*this);
+    node->evaluatedType = evaluateTypeContext(node->getType()->typeContext);
+    typeScope->set(node->getName(), node->evaluatedType);
+    return std::any(node->evaluatedType);
   };
 
   std::any visitTemplateTypeDeclaration(
@@ -537,6 +541,32 @@ class OrcaTypeChecker : OrcaAstVisitor {
                     node->parseContext->getStart()->getCharPositionInLine());
   }
 
+  std::any visitMemberAccessExpression(
+      OrcaAstMemberAccessExpressionNode *node) override {
+    if (node->getKind() ==
+        OrcaAstMemberAccessExpressionNode::OrcaAstMemberAccessKind::Dot) {
+      const auto &expr =
+          std::any_cast<OrcaType *>(node->getExpr()->accept(*this));
+
+      if (expr->isValidDotAccess(node->getMember())) {
+        for (const auto &member : expr->getStructType().getFields()) {
+          if (member.first == node->getMember()) {
+            node->evaluatedType = member.second;
+            return std::any(node->evaluatedType);
+          }
+        }
+      }
+
+      throw OrcaError(compileContext,
+                      "Cannot access member '" + node->getMember() +
+                          "' of type '" + expr->toString() + "'.",
+                      node->parseContext->getStart()->getLine(),
+                      node->parseContext->getStart()->getCharPositionInLine());
+    }
+
+    throw "TODO";
+  }
+
   // Type map for mapping ast nodes to types
   std::map<OrcaAstNode *, OrcaType *> typeMap;
 
@@ -586,6 +616,38 @@ class OrcaTypeChecker : OrcaAstVisitor {
       auto elementType = evaluateTypeContext(tContext->elementType);
       size_t arraySize = std::stoi(tContext->arraySize->getText());
       return new OrcaType(OrcaArrayType(elementType, arraySize));
+    }
+
+    if (tContext->LBRACE()) {
+      const auto &fieldDecls =
+          tContext->structFieldDeclarationList()->structFieldDeclaration();
+
+      std::set<std::string> fieldNames;
+      for (auto &fieldDecl : fieldDecls) {
+        auto fieldName = fieldDecl->Identifier()->getText();
+        if (fieldNames.find(fieldName) != fieldNames.end()) {
+          throw OrcaError(compileContext,
+                          "Duplicate field name '" + fieldName + "'.",
+                          fieldDecl->getStart()->getLine(),
+                          fieldDecl->getStart()->getCharPositionInLine());
+        }
+        fieldNames.insert(fieldName);
+      }
+
+      std::vector<std::pair<std::string, OrcaType *>> fields;
+      fields.resize(fieldDecls.size());
+
+      for (size_t i = 0; i < fieldDecls.size(); ++i) {
+        auto fieldDecl = fieldDecls[i];
+        fields[i] = std::make_pair(fieldDecl->Identifier()->getText(),
+                                   evaluateTypeContext(fieldDecl->type()));
+      }
+
+      return new OrcaType(OrcaStructType(fields));
+    }
+
+    if (typeScope->isInScope(tContext->getText())) {
+      return *typeScope->get(tContext->getText());
     }
 
     throw OrcaError(compileContext, "Unhandled type. This is a bug.",

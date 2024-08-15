@@ -3,6 +3,7 @@
 #include "OrcaError.h"
 #include "OrcaScope.h"
 #include "OrcaType.h"
+#include <algorithm>
 #include <alloca.h>
 #include <any>
 #include <cassert>
@@ -480,4 +481,34 @@ std::any OrcaCodeGen::visitStringLiteralExpression(
       strGlobal, llvm::Type::getInt8PtrTy(*llvmContext));
 
   return (llvm::Value *)strGlobal;
+}
+
+std::any OrcaCodeGen::visitMemberAccessExpression(
+    OrcaAstMemberAccessExpressionNode *node) {
+  auto indexee = gen(node->getExpr());
+  const auto index =
+      node->getExpr()->evaluatedType->getStructFieldIndex(node->getMember());
+
+  // print the type of the element
+
+  // std::cout << "Element type: " << index << std::endl;
+  // auto gep = builder->CreateStructGEP(elementType, indexee, index);
+  // gep->dump();
+
+  if (llvm::isa<llvm::LoadInst>(indexee)) {
+    indexee = llvm::cast<llvm::LoadInst>(indexee)->getPointerOperand();
+  }
+
+  const auto elementType = indexee->getType()->getPointerElementType();
+  auto gep = builder->CreateStructGEP(elementType, indexee, index);
+  auto load = builder->CreateLoad(gep->getType()->getPointerElementType(), gep);
+  return (llvm::Value *)load;
+
+  throw OrcaError(compileContext, "Member access not implemented yet.",
+                  node->parseContext->getStart()->getLine(),
+                  node->parseContext->getStart()->getCharPositionInLine());
+
+  // auto gep = builder->CreateGEP(elementType, indexee, numericIndex);
+  // auto load = builder->CreateLoad(gep->getType()->getPointerElementType(),
+  // gep); return (llvm::Value *)load;
 }
