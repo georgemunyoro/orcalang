@@ -144,15 +144,7 @@ public:
     throw "TODO";
   };
 
-  std::any visitFieldMap(OrcaParser::FieldMapContext *context) override {
-    std::map<std::string, OrcaAstExpressionNode *> fields;
-    for (auto fieldMapEntry : context->fieldMapEntry()) {
-      const auto key = fieldMapEntry->key->getText();
-      const auto value = fieldMapEntry->value->accept(this);
-      fields[key] = std::any_cast<OrcaAstExpressionNode *>(value);
-    }
-    return new OrcaAstFieldMapNode(context, fields);
-  };
+  std::any visitFieldMap(OrcaParser::FieldMapContext *context) override;
 
   std::any
   visitFieldMapEntry(OrcaParser::FieldMapEntryContext *context) override {

@@ -160,6 +160,8 @@ public:
   std::any
   visitMemberAccessExpression(OrcaAstMemberAccessExpressionNode *node) override;
 
+  std::any visitFieldMap(OrcaAstFieldMapNode *node) override;
+
   llvm::Type *generateType(OrcaType *type) {
     switch (type->getKind()) {
 
@@ -176,7 +178,8 @@ public:
       }
 
       return llvm::FunctionType::get(generateType(functionType.getReturnType()),
-                                     parameterTypes, false);
+                                     parameterTypes,
+                                     functionType.getIsVariadic());
     }
 
     case OrcaTypeKind::Boolean:

@@ -128,8 +128,10 @@ public:
 class OrcaFunctionType {
 public:
   OrcaFunctionType(OrcaType *returnType,
-                   std::vector<std::pair<std::string, OrcaType *>> parameters)
-      : returnType(returnType), parameters(parameters) {}
+                   std::vector<std::pair<std::string, OrcaType *>> parameters,
+                   bool isVariadic = false)
+      : returnType(returnType), parameters(parameters), isVariadic(isVariadic) {
+  }
 
   OrcaTypeKind getKind() const { return OrcaTypeKind::Function; }
 
@@ -143,9 +145,12 @@ public:
     return parameterTypes;
   }
 
+  bool getIsVariadic() const { return isVariadic; }
+
 private:
   OrcaType *returnType;
   std::vector<std::pair<std::string, OrcaType *>> parameters;
+  bool isVariadic;
 
   friend class OrcaType;
 };
@@ -292,8 +297,17 @@ public:
       return "bool";
     case OrcaTypeKind::Char:
       return "char";
-    case OrcaTypeKind::Struct:
-      return "struct";
+    case OrcaTypeKind::Struct: {
+      std::string structStr = "struct { ";
+      for (size_t i = 0; i < structType.fields.size(); ++i) {
+        structStr += structType.fields.at(i).first + ": " +
+                     structType.fields.at(i).second->toString();
+        if (i != structType.fields.size() - 1) {
+          structStr += ", ";
+        }
+      }
+      return structStr + " }";
+    }
     case OrcaTypeKind::Void:
       return "void";
     case OrcaTypeKind::Function: {
@@ -304,6 +318,8 @@ public:
           paramsStr += ", ";
         }
       }
+      if (functionType.isVariadic)
+        paramsStr += ", ...";
       return paramsStr + ") -> " + functionType.returnType->toString();
     }
     }

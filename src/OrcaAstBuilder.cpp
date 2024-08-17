@@ -435,6 +435,33 @@ std::any OrcaAstBuilder::visitPostfixExpression(
   return std::any(expr);
 }
 
+std::string unescape(const std::string &s) {
+  std::string res;
+  std::string::const_iterator it = s.begin();
+  while (it != s.end()) {
+    char c = *it++;
+    if (c == '\\' && it != s.end()) {
+      switch (*it++) {
+      case '\\':
+        c = '\\';
+        break;
+      case 'n':
+        c = '\n';
+        break;
+      case 't':
+        c = '\t';
+        break;
+
+      default: // invalid escape sequence - skip it.
+        continue;
+      }
+    }
+    res += c;
+  }
+
+  return res;
+}
+
 std::any OrcaAstBuilder::visitPrimaryExpression(
     OrcaParser::PrimaryExpressionContext *context) {
 
@@ -461,7 +488,7 @@ std::any OrcaAstBuilder::visitPrimaryExpression(
   }
 
   if (context->String()) {
-    std::string value = context->String()->getText();
+    std::string value = unescape(context->String()->getText());
     return std::any(
         (OrcaAstExpressionNode *)new OrcaAstStringLiteralExpressionNode(context,
                                                                         value));
@@ -570,11 +597,15 @@ std::any OrcaAstBuilder::visitFunctionDeclarationStatement(
   auto returnType =
       std::any_cast<OrcaAstTypeNode *>(visit(context->returnType));
   auto functionName = context->name->getText();
-  auto body = (OrcaAstCompoundStatementNode *)std::any_cast<OrcaAstNode *>(
-      visit(context->body));
+  auto body =
+      context->body != nullptr
+          ? (OrcaAstCompoundStatementNode *)std::any_cast<OrcaAstNode *>(
+                visit(context->body))
+          : nullptr;
 
   OrcaAstFunctionDeclarationNode *funcDecl = new OrcaAstFunctionDeclarationNode(
-      context, functionName, returnType, params, body);
+      context, functionName, returnType, params, body,
+      context->ELLIPSIS() != nullptr);
 
   return std::any((OrcaAstNode *)funcDecl);
 }

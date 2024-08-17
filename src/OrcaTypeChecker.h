@@ -264,8 +264,8 @@ class OrcaTypeChecker : OrcaAstVisitor {
 
     OrcaType *returnType =
         std::any_cast<OrcaType *>(node->returnType->accept(*this));
-    OrcaType *functionType =
-        new OrcaType(OrcaFunctionType(returnType, parameters));
+    OrcaType *functionType = new OrcaType(
+        OrcaFunctionType(returnType, parameters, node->getIsVarArg()));
 
     node->evaluatedType = functionType;
     node->returnType->evaluatedType = returnType;
@@ -290,7 +290,8 @@ class OrcaTypeChecker : OrcaAstVisitor {
     }
 
     // Evaluate body
-    node->body->accept(*this);
+    if (node->body)
+      node->body->accept(*this);
 
     // Leave the scope
     typeScope = typeScope->getParent();
@@ -314,20 +315,16 @@ class OrcaTypeChecker : OrcaAstVisitor {
                       node->parseContext->getStart()->getCharPositionInLine());
     }
 
-    if (callee->getPointerType()
-            .getPointee()
-            ->getFunctionType()
-            .getParameterTypes()
-            .size() != node->getArgs().size()) {
+    const auto fType = callee->getPointerType().getPointee()->getFunctionType();
+
+    if (fType.getIsVariadic()
+            ? fType.getParameterTypes().size() > node->getArgs().size()
+            : fType.getParameterTypes().size() != node->getArgs().size()) {
       throw OrcaError(
           compileContext,
           "Function call has incorrect number of arguments. Expected " +
-              std::to_string(callee->getPointerType()
-                                 .getPointee()
-                                 ->getFunctionType()
-                                 .getParameterTypes()
-                                 .size()) +
-              " but got " + std::to_string(node->getArgs().size()) + ".",
+              std::to_string(fType.getParameterTypes().size()) + " but got " +
+              std::to_string(node->getArgs().size()) + ".",
           node->parseContext->getStart()->getLine(),
           node->parseContext->getStart()->getCharPositionInLine());
     }
@@ -335,12 +332,16 @@ class OrcaTypeChecker : OrcaAstVisitor {
     for (size_t i = 0; i < node->getArgs().size(); ++i) {
       auto argType =
           std::any_cast<OrcaType *>(node->getArgs()[i]->accept(*this));
-      auto paramType = callee->getPointerType()
-                           .getPointee()
-                           ->getFunctionType()
-                           .getParameterTypes()[i];
 
-      if (!argType->isEqual(paramType)) {
+      if (i >= fType.getParameterTypes().size() && fType.getIsVariadic())
+        continue;
+
+      if (const auto paramType =
+              fType.getParameterTypes()[fType.getParameterTypes().size() -
+                                        1 - // FIXME: Shouldn't be doing this
+                                            // weird reverse thing
+                                        i];
+          !argType->isEqual(paramType)) {
         throw OrcaError(
             compileContext,
             "Function call argument " + std::to_string(i) +
@@ -351,10 +352,7 @@ class OrcaTypeChecker : OrcaAstVisitor {
       }
     }
 
-    node->evaluatedType = callee->getPointerType()
-                              .getPointee()
-                              ->getFunctionType()
-                              .getReturnType();
+    node->evaluatedType = fType.getReturnType();
     return std::any(node->evaluatedType);
   }
 
@@ -482,9 +480,11 @@ class OrcaTypeChecker : OrcaAstVisitor {
     auto arrayType = std::any_cast<OrcaType *>(node->getExpr()->accept(*this));
     auto indexType = std::any_cast<OrcaType *>(node->getIndex()->accept(*this));
 
-    if (!arrayType->is(OrcaTypeKind::Array)) {
+    if (!arrayType->is(OrcaTypeKind::Array) &&
+        !arrayType->is(OrcaTypeKind::Pointer)) {
       throw OrcaError(compileContext,
-                      "Indexing expression must be applied to an array. Got '" +
+                      "Indexing expression must be applied to an array or "
+                      "pointer type. Got '" +
                           arrayType->toString() + "'.",
                       node->parseContext->getStart()->getLine(),
                       node->parseContext->getStart()->getCharPositionInLine());
@@ -497,6 +497,11 @@ class OrcaTypeChecker : OrcaAstVisitor {
               indexType->toString() + "'.",
           node->parseContext->getStart()->getLine(),
           node->parseContext->getStart()->getCharPositionInLine());
+    }
+
+    if (arrayType->is(OrcaTypeKind::Pointer)) {
+      node->evaluatedType = arrayType->getPointerType().getPointee();
+      return std::any(node->evaluatedType);
     }
 
     node->evaluatedType = arrayType->getArrayType().getElementType();
@@ -534,6 +539,23 @@ class OrcaTypeChecker : OrcaAstVisitor {
       }
     }
 
+    if (exprType->is(OrcaTypeKind::Array)) {
+      if (type->is(OrcaTypeKind::Pointer)) {
+        if (type->getPointerType().getPointee()->isEqual(
+                exprType->getArrayType().getElementType())) {
+          node->evaluatedType = type;
+          return std::any(node->evaluatedType);
+        }
+      }
+    }
+
+    if (exprType->is(OrcaTypeKind::Pointer)) {
+      if (type->is(OrcaTypeKind::Pointer)) {
+        node->evaluatedType = type;
+        return std::any(node->evaluatedType);
+      }
+    }
+
     throw OrcaError(compileContext,
                     "Cannot cast from type '" + exprType->toString() +
                         "' to type '" + type->toString() + "'.",
@@ -565,6 +587,16 @@ class OrcaTypeChecker : OrcaAstVisitor {
     }
 
     throw "TODO";
+  }
+
+  std::any visitFieldMap(OrcaAstFieldMapNode *node) override {
+    std::vector<std::pair<std::string, OrcaType *>> fields;
+    for (auto &field : node->getFields()) {
+      auto fieldType = std::any_cast<OrcaType *>(field.second->accept(*this));
+      fields.push_back(std::make_pair(field.first, fieldType));
+    }
+    node->evaluatedType = new OrcaType(OrcaStructType(fields));
+    return std::any(node->evaluatedType);
   }
 
   // Type map for mapping ast nodes to types

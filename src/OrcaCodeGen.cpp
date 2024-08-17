@@ -42,6 +42,9 @@ std::any OrcaCodeGen::visitFunctionDeclarationStatement(
       llvm::cast<llvm::FunctionType>(functionType),
       llvm::Function::ExternalLinkage, node->getName(), module);
 
+  if (!node->getBody())
+    return function;
+
   auto entryBlock = llvm::BasicBlock::Create(*llvmContext, "entry", function);
   builder->SetInsertPoint(entryBlock);
 
@@ -188,6 +191,34 @@ std::any OrcaCodeGen::visitCastExpression(OrcaAstCastExpressionNode *node) {
     }
   }
 
+  if (fromType->is(OrcaTypeKind::Array)) {
+    switch (toType->getKind()) {
+    case OrcaTypeKind::Pointer: {
+      if (fromType->getArrayType().getElementType()->getKind() ==
+          toType->getPointerType().getPointee()->getKind()) {
+        auto elementType = generateType(toType->getPointerType().getPointee());
+        return builder->CreateGEP(
+            elementType, operand,
+            llvm::ConstantInt::get(*llvmContext, APInt(32, 0)));
+      }
+    }
+
+    default:
+      break;
+    }
+  }
+
+  if (fromType->is(OrcaTypeKind::Pointer)) {
+    switch (toType->getKind()) {
+    case OrcaTypeKind::Pointer: {
+      return builder->CreateBitCast(operand, generateType(toType));
+    }
+
+    default:
+      break;
+    }
+  }
+
   throw OrcaError(compileContext,
                   "Cannot cast from '" +
                       node->getExpr()->evaluatedType->toString() + "' to '" +
@@ -210,15 +241,22 @@ OrcaCodeGen::visitExpressionStatement(OrcaAstExpressionStatementNode *node) {
 
 std::any
 OrcaCodeGen::visitAssignmentExpression(OrcaAstAssignmentExpressionNode *node) {
-  llvm::Value *value =
-      std::any_cast<llvm::Value *>(node->getRhs()->accept(*this));
-  llvm::Value *assignee =
-      std::any_cast<llvm::Value *>(node->getLhs()->accept(*this));
+
+  auto value = gen(node->getRhs());
+  auto assignee = gen(node->getLhs());
+
+  const auto typeKind = node->getLhs()->evaluatedType->getKind();
+  if (typeKind == OrcaTypeKind::Struct || typeKind == OrcaTypeKind::Array) {
+    auto size = node->getLhs()->evaluatedType->sizeOf();
+    auto memcpy = builder->CreateMemCpy(
+        assignee, llvm::MaybeAlign(1), value, llvm::MaybeAlign(1),
+        llvm::ConstantInt::get(*llvmContext, llvm::APInt(64, size)), false);
+    return value;
+  }
 
   if (llvm::isa<llvm::LoadInst>(assignee)) {
     llvm::LoadInst *loadInst = llvm::cast<llvm::LoadInst>(assignee);
-    builder->CreateStore(value, loadInst->getPointerOperand());
-    return value;
+    assignee = loadInst->getPointerOperand();
   }
 
   builder->CreateStore(value, assignee);
@@ -422,6 +460,14 @@ std::any OrcaCodeGen::visitFunctionCallExpression(
   for (auto &arg : node->getArgs())
     args.push_back(std::any_cast<llvm::Value *>(arg->accept(*this)));
 
+  if (!node->getCallee()
+           ->evaluatedType->getPointerType()
+           .getPointee()
+           ->getFunctionType()
+           .getIsVariadic()) {
+    std::reverse(args.begin(), args.end());
+  }
+
   return (llvm::Value *)builder->CreateCall(func, args);
 }
 
@@ -489,26 +535,24 @@ std::any OrcaCodeGen::visitMemberAccessExpression(
   const auto index =
       node->getExpr()->evaluatedType->getStructFieldIndex(node->getMember());
 
-  // print the type of the element
-
-  // std::cout << "Element type: " << index << std::endl;
-  // auto gep = builder->CreateStructGEP(elementType, indexee, index);
-  // gep->dump();
-
-  if (llvm::isa<llvm::LoadInst>(indexee)) {
+  if (llvm::isa<llvm::LoadInst>(indexee))
     indexee = llvm::cast<llvm::LoadInst>(indexee)->getPointerOperand();
-  }
 
   const auto elementType = indexee->getType()->getPointerElementType();
   auto gep = builder->CreateStructGEP(elementType, indexee, index);
   auto load = builder->CreateLoad(gep->getType()->getPointerElementType(), gep);
   return (llvm::Value *)load;
+}
 
-  throw OrcaError(compileContext, "Member access not implemented yet.",
-                  node->parseContext->getStart()->getLine(),
-                  node->parseContext->getStart()->getCharPositionInLine());
-
-  // auto gep = builder->CreateGEP(elementType, indexee, numericIndex);
-  // auto load = builder->CreateLoad(gep->getType()->getPointerElementType(),
-  // gep); return (llvm::Value *)load;
+std::any OrcaCodeGen::visitFieldMap(OrcaAstFieldMapNode *node) {
+  auto ty = generateType(node->evaluatedType);
+  auto alloc = builder->CreateAlloca(ty);
+  size_t i = 0;
+  for (auto &field : node->getFields()) {
+    auto value = gen(field.second);
+    auto gep = builder->CreateStructGEP(ty, alloc, i);
+    builder->CreateStore(value, gep);
+    i++;
+  }
+  return (llvm::Value *)alloc;
 }

@@ -46,4 +46,5 @@ public:
   virtual std::any visitIndexExpression(OrcaAstIndexExpressionNode *node) = 0;
   virtual std::any
   visitMemberAccessExpression(OrcaAstMemberAccessExpressionNode *node) = 0;
+  virtual std::any visitFieldMap(OrcaAstFieldMapNode *node) = 0;
 };

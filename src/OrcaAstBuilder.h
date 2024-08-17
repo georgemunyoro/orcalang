@@ -123,7 +123,7 @@ public:
       const auto value = fieldMapEntry->value->accept(this);
       fields[key] = std::any_cast<OrcaAstExpressionNode *>(value);
     }
-    return new OrcaAstFieldMapNode(context, fields);
+    return (OrcaAstExpressionNode *)(new OrcaAstFieldMapNode(context, fields));
   };
 
   std::any

@@ -28,8 +28,9 @@ identifierList: Identifier (',' Identifier)*;
 functionDeclarationStatement:
 	'func' name = Identifier (
 		'(' args = functionArgs ')'
+		| '(' args = functionArgs ',' '...' ')'
 		| '(' ')'
-	) '->' returnType = type body = compoundStatement
+	) '->' returnType = type ((body = compoundStatement)? | ';')
 	| 'func' name = Identifier '<' typeParams = identifierList '>' (
 		'(' args = functionArgs ')'
 		| '(' ')'

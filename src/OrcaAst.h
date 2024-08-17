@@ -23,6 +23,7 @@
 #include "Operator/Binary/Mul.h"
 #include "Operator/Binary/Sub.h"
 
+#include "Operator/Unary/AddrOf.h"
 #include "Operator/Unary/BitNot.h"
 #include "Operator/Unary/Neg.h"
 #include "Operator/Unary/Not.h"
@@ -330,6 +331,8 @@ public:
       op = orca::NegOperator::getInstance();
     else if (opSymbol == "!")
       op = orca::NotOperator::getInstance();
+    else if (opSymbol == "&")
+      op = orca::AddrOfOperator::getInstance();
     else
       throw std::runtime_error("Unknown unary operator: " + opSymbol +
                                ". This is a bug.");
@@ -664,8 +667,10 @@ public:
                                  const std::string &name,
                                  OrcaAstTypeNode *returnType,
                                  std::map<std::string, OrcaAstTypeNode *> args,
-                                 OrcaAstCompoundStatementNode *body)
-      : name(name), returnType(returnType), args(args), body(body) {
+                                 OrcaAstCompoundStatementNode *body,
+                                 bool isVarArg = false)
+      : name(name), returnType(returnType), args(args), body(body),
+        isVarArg(isVarArg) {
     this->parseContext = pContext;
     evaluatedType = nullptr;
   }
@@ -679,10 +684,13 @@ public:
       printf("%*s%s%s%s", indent + 2, "", KYEL, arg.first.c_str(), KNRM);
       arg.second->print(1);
     }
+    if (isVarArg)
+      printf("%*s%svararg%s\n", indent + 2, "", KYEL, KNRM);
     printf("%*s %s->%s ", indent + 2, "", KMAG, KNRM);
     returnType->print(1);
 
-    body->print(indent + 2);
+    if (body)
+      body->print(indent + 2);
   }
 
   std::string toString(int indent) override {
@@ -693,11 +701,14 @@ public:
       result += std::string(indent + 2, ' ') + KYEL + arg.first + KNRM;
       result += arg.second->toString(1);
     }
+    if (isVarArg)
+      result += std::string(indent + 2, ' ') + KYEL + "vararg" + KNRM + "\n";
 
     result += std::string(indent + 2, ' ') + KMAG + " -> " + KNRM;
     result += returnType->toString(1);
 
-    result += body->toString(indent + 2);
+    if (body)
+      result += body->toString(indent + 2);
     return result;
   }
 
@@ -709,11 +720,14 @@ public:
 
   OrcaAstCompoundStatementNode *getBody() const { return body; }
 
+  bool getIsVarArg() const { return isVarArg; }
+
 private:
   std::string name;
   OrcaAstTypeNode *returnType;
   std::map<std::string, OrcaAstTypeNode *> args;
   OrcaAstCompoundStatementNode *body;
+  bool isVarArg;
 
   friend class OrcaTypeChecker;
 };

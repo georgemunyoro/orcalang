@@ -3,7 +3,16 @@ lexer grammar OrcaLexer;
 // Constant: Integer | Float | Char | Boolean;
 Integer: DIGIT_NON_ZERO DIGIT* | DIGIT;
 Float: DIGIT+ '.' DIGIT+;
-String: '"' .*? '"';
+
+String 
+ : '"' ( ~[\\"\r\n] | ESCAPE_CHAR )* '"'
+ ;
+
+ fragment ESCAPE_CHAR
+ : '\\' [0btnfr"'\\]
+ ;
+
+
 Boolean: 'true' | 'false';
 Char: '\'' . '\'';
 
@@ -15,6 +24,7 @@ fragment DIGIT: [0-9];
 // Symbols
 SEMICOLON: ';';
 DOT: '.';
+ELLIPSIS: '...';
 COMMA: ',';
 COLON: ':';
 LBRACE: '{';
@@ -89,6 +99,7 @@ CONTINUE: 'continue';
 LET: 'let';
 AS: 'as';
 FN: 'func';
+EXTERN: 'extern';
 TYPE: 'type';
 TRAIT: 'trait';
 IMPLEMENT: 'impl';

@@ -3,6 +3,8 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.7 FATAL_ERROR)
 
 project(orcalang)
 
+set(CMAKE_BUILD_TYPE DEBUG)
+
 find_package(LLVM REQUIRED CONFIG)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
@@ -97,6 +99,7 @@ add_executable(orca
               src/Operator/Unary/BitNot.cpp
               src/Operator/Unary/Neg.cpp
               src/Operator/Unary/Not.cpp
+              src/Operator/Unary/AddrOf.cpp
 
               ${ANTLR_OrcaLexer_CXX_OUTPUTS}
               ${ANTLR_OrcaParser_CXX_OUTPUTS}
@@ -139,6 +142,7 @@ add_executable(orca_test
               src/Operator/Unary/BitNot.cpp
               src/Operator/Unary/Neg.cpp
               src/Operator/Unary/Not.cpp
+              src/Operator/Unary/AddrOf.cpp
 
               test/main.cpp
               test/utils.cpp

@@ -101,3 +101,7 @@ std::any OrcaAstIndexExpressionNode::accept(OrcaAstVisitor &visitor) {
 std::any OrcaAstMemberAccessExpressionNode::accept(OrcaAstVisitor &visitor) {
   return visitor.visitMemberAccessExpression(this);
 }
+
+std::any OrcaAstFieldMapNode::accept(OrcaAstVisitor &visitor) {
+  return visitor.visitFieldMap(this);
+}
